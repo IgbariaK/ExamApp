@@ -1,24 +1,25 @@
+// client/src/api/mockDb.js
 
 export const mockDb = {
   exams: [
     {
-      id: "exam-1",
+      id: 1,
       title: "Introduction to React",
       questions: [
-        { id: 1, text: "What is JSX?", options: ["A CSS framework", "A JavaScript syntax extension", "A database"], correct: 1 },
-        { id: 2, text: "What is a component?", options: ["A reusable UI piece", "A backend server", "A styling tool"], correct: 0 }
+        { id: 101, text: "What is a component?", answer: "A reusable piece of UI." },
+        { id: 102, text: "What hook manages state?", answer: "useState" }
       ]
     },
     {
-      id: "exam-2",
+      id: 2,
       title: "Advanced JavaScript",
       questions: [
-        { id: 1, text: "What is a Closure?", options: ["A way to close a tab", "A function with its lexical environment", "A type of loop"], correct: 1 }
+        { id: 201, text: "What is a closure?", answer: "A function bundled with its lexical environment." }
       ]
     }
   ],
   studentScores: [
-    { studentId: "s1", examId: "exam-1", score: 85 },
-    { studentId: "s2", examId: "exam-1", score: 92 }
+    { studentId: "S001", examId: 1, score: 95 },
+    { studentId: "S002", examId: 1, score: 88 }
   ]
 };

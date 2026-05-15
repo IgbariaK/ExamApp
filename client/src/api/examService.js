@@ -1,43 +1,28 @@
-
+// client/src/api/examService.js
 import { mockDb } from './mockDb';
 
-const DELAY = 500;
+// Helper function to simulate network delay
+const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const getAllExams = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([...mockDb.exams]);
-    }, DELAY);
-  });
+export const getAllExams = async () => {
+  await delay();
+  return [...mockDb.exams]; // Return a copy to simulate fetching
 };
 
-export const getExamById = (id) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const exam = mockDb.exams.find(e => e.id === id);
-      if (exam) {
-        resolve({ ...exam });
-      } else {
-        reject(new Error("Exam not found"));
-      }
-    }, DELAY);
-  });
+export const getExamById = async (id) => {
+  await delay();
+  const exam = mockDb.exams.find(e => e.id === Number(id));
+  if (!exam) throw new Error("Exam not found");
+  return exam;
 };
 
-export const createExam = (exam) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newExam = { ...exam, id: `exam-${Date.now()}` };
-      mockDb.exams.push(newExam);
-      resolve(newExam);
-    }, DELAY);
-  });
-};
-
-export const getStudentScores = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([...mockDb.studentScores]);
-    }, DELAY);
-  });
+export const createExam = async (exam) => {
+  await delay();
+  const newExam = {
+    ...exam,
+    id: Date.now(), // Generate a simple unique ID
+    questions: exam.questions || []
+  };
+  mockDb.exams.push(newExam);
+  return newExam;
 };

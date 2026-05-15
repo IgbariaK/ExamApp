@@ -1,26 +1,29 @@
-
+// client/src/StudentPortal.jsx
 import React, { useState } from 'react';
-import { getExamById } from '../api/examService';
+import { getExamById } from "../api/examService";
 
 const StudentPortal = () => {
   const [examId, setExamId] = useState('');
-  const [exam, setExam] = useState(null);
+  const [currentExam, setCurrentExam] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleFetchExam = async (e) => {
+  const handleStartExam = async (e) => {
     e.preventDefault();
-    if (!examId.trim()) return;
+    setError('');
+    setCurrentExam(null);
+    
+    if (!examId.trim()) {
+      setError('Please enter a valid Exam ID.');
+      return;
+    }
 
     setLoading(true);
-    setError('');
-    setExam(null);
-
     try {
-      const data = await getExamById(examId);
-      setExam(data);
+      const exam = await getExamById(examId);
+      setCurrentExam(exam);
     } catch (err) {
-      setError(err.message || "Failed to fetch exam");
+      setError('Exam not found. Please check the ID and try again.');
     } finally {
       setLoading(false);
     }
@@ -28,52 +31,41 @@ const StudentPortal = () => {
 
   return (
     <div className="container mt-4">
-      <div className="card shadow">
-        <div className="card-header bg-info text-white">
-          <h2 className="mb-0">Student Portal</h2>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleFetchExam} className="mb-4">
-            <div className="mb-3">
-              <label htmlFor="examId" className="form-label">Enter Exam ID to Start</label>
-              <div className="input-group">
-                <input
-                  type="text"
-                  id="examId"
-                  className="form-control"
-                  placeholder="e.g., exam-1"
-                  value={examId}
-                  onChange={(e) => setExamId(e.target.value)}
-                  disabled={loading}
-                />
-                <button 
-                  className="btn btn-primary" 
-                  type="submit"
-                  disabled={loading || !examId.trim()}
-                >
-                  {loading ? 'Searching...' : 'Find Exam'}
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card shadow">
+            <div className="card-header bg-primary text-white">
+              <h4 className="mb-0">Student Portal</h4>
+            </div>
+            <div className="card-body">
+              <form onSubmit={handleStartExam}>
+                <div className="mb-3">
+                  <label htmlFor="examIdInput" className="form-label">Enter Exam ID to Start</label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    id="examIdInput" 
+                    value={examId}
+                    onChange={(e) => setExamId(e.target.value)}
+                    placeholder="e.g., 1"
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+                  {loading ? 'Searching...' : 'Start Exam'}
                 </button>
-              </div>
-            </div>
-          </form>
+              </form>
 
-          {error && <div className="alert alert-danger">{error}</div>}
+              {error && <div className="alert alert-danger mt-3">{error}</div>}
 
-          {exam && (
-            <div className="card border-primary">
-              <div className="card-body">
-                <h4 className="card-title text-primary">{exam.title}</h4>
-                <p className="card-text">This exam contains {exam.questions.length} questions.</p>
-                <button className="btn btn-success w-100">Start Exam Now</button>
-              </div>
+              {currentExam && (
+                <div className="alert alert-success mt-3">
+                  <h5>Exam Found: {currentExam.title}</h5>
+                  <p className="mb-0">This exam has {currentExam.questions.length} questions. Good luck!</p>
+                  {/* Future implementation: Render the actual test questions here */}
+                </div>
+              )}
             </div>
-          )}
-
-          {!exam && !error && !loading && (
-            <div className="text-center py-5 text-muted">
-              <p>Ready to take an exam? Enter your Exam ID above.</p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
