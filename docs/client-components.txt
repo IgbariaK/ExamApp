@@ -1,0 +1,19 @@
+ExamApp (Root)
+ │
+ ├── NavigationMenu (Global UI - adjusts based on user role)
+ │
+ ├── AppRouter (Handles page navigation)
+ │    │
+ │    ├── AuthPages
+ │    │    ├── Login (Handles credentials)
+ │    │    └── Register (Creates new user)
+ │    │
+ │    ├── TeacherPages (Requires Teacher Auth State)
+ │    │    ├── TeacherDashboard (Overview of created exams)
+ │    │    ├── ExamEditor (Module to create/edit tests)
+ │    │    └── ResultsViewer (View student grades/statuses)
+ │    │
+ │    └── StudentPages (Requires Student Auth State)
+ │         ├── StudentDashboard (List of pending/completed exams)
+ │         ├── ActiveExam (The test-taking interface)
+ │         └── GradeReport (View personal results)
