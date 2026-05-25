@@ -25,6 +25,8 @@ function App() {
     }
 =======
 import React, { useState, useEffect } from 'react';
+import StudentDashboard from './components/StudentPages/StudentDashboard';
+import ExamTaker from './components/StudentPages/ExamTaker';
 import ExamEditor from './components/TeacherPages/ExamEditor';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
@@ -138,7 +140,11 @@ const App = () => {
                   </>
                 )}
                 {user.role === 'STUDENT' && (
-                  <Route path="*" element={<StudentDashboard />} />
+                  <>
+                    <Route path="/" element={<StudentDashboard />} />
+                    <Route path="/take-exam/:examId" element={<ExamTaker />} />
+                    <Route path="*" element={<StudentDashboard />} />
+                  </>
                 )}
               </>
             )}

@@ -1,5 +1,5 @@
 {
-  "homepage": "https://<IgbariaK>.github.io/<ExamApp>",
+  "homepage": "https://IgbariaK.github.io/ExamApp",
   "name": "client",
   "private": true,
   "version": "0.0.0",
@@ -13,6 +13,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1"
