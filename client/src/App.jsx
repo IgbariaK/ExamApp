@@ -25,6 +25,7 @@ function App() {
     }
 =======
 import React, { useState, useEffect } from 'react';
+import ExamEditor from './components/TeacherPages/ExamEditor';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
 import NavigationMenu from './components/Shared/NavigationMenu';
@@ -130,7 +131,11 @@ const App = () => {
             ) : (
               <>
                 {user.role === 'TEACHER' && (
-                  <Route path="*" element={<TeacherDashboard />} /> // <-- Real component active!
+                  <>
+                    <Route path="/" element={<TeacherDashboard />} />
+                    <Route path="/editor" element={<ExamEditor />} />
+                    <Route path="*" element={<TeacherDashboard />} />
+                  </>
                 )}
                 {user.role === 'STUDENT' && (
                   <Route path="*" element={<StudentDashboard />} />
