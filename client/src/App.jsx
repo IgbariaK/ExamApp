@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // client/src/App.jsx
 import React, { useState } from 'react';
 import TeacherDashboard from './components/TeacherDashboard';
@@ -22,6 +23,34 @@ function App() {
     } else {
       setError('Invalid login. Please type "teacher" or "student".');
     }
+=======
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './components/Auth/Login';
+import NavigationMenu from './components/Shared/NavigationMenu';
+import TeacherDashboard from './components/TeacherPages/TeacherDashboard'; // <-- Real component imported!
+
+// We will keep the Student placeholder until we build it properly
+const StudentDashboard = () => <div style={{ padding: '20px' }}><h2>Student Dashboard</h2><p>Here are your available exams.</p></div>;
+
+const App = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('activeUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLoginSuccess = (loggedInUser) => {
+    setUser(loggedInUser);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('activeUser');
+    setUser(null);
+>>>>>>> ee91afe (sorted all files and folders correctly and connected the teacher dashbord)
   };
 
   const handleLogout = () => {
@@ -72,6 +101,7 @@ function App() {
 
   // View 2: The Logged-In App (Teacher or Student Dashboard)
   return (
+<<<<<<< HEAD
     <div>
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
         <div className="container">
@@ -86,12 +116,33 @@ function App() {
           </div>
         </div>
       </nav>
+=======
+    <Router>
+      <div className="app-container" style={{ fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
+        
+        <NavigationMenu user={user} onLogout={handleLogout} />
+>>>>>>> ee91afe (sorted all files and folders correctly and connected the teacher dashbord)
 
-      <main>
-        {role === 'teacher' ? <TeacherDashboard /> : <StudentPortal />}
-      </main>
-    </div>
+        <main>
+          <Routes>
+            {!user ? (
+              <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+            ) : (
+              <>
+                {user.role === 'TEACHER' && (
+                  <Route path="*" element={<TeacherDashboard />} /> // <-- Real component active!
+                )}
+                {user.role === 'STUDENT' && (
+                  <Route path="*" element={<StudentDashboard />} />
+                )}
+              </>
+            )}
+          </Routes>
+        </main>
+        
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;
