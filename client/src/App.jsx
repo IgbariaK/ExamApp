@@ -25,16 +25,13 @@ function App() {
     }
 =======
 import React, { useState, useEffect } from 'react';
-import StudentDashboard from './components/StudentPages/StudentDashboard';
-import ExamTaker from './components/StudentPages/ExamTaker';
-import ExamEditor from './components/TeacherPages/ExamEditor';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
 import NavigationMenu from './components/Shared/NavigationMenu';
-import TeacherDashboard from './components/TeacherPages/TeacherDashboard'; // <-- Real component imported!
-
-// We will keep the Student placeholder until we build it properly
-const StudentDashboard = () => <div style={{ padding: '20px' }}><h2>Student Dashboard</h2><p>Here are your available exams.</p></div>;
+import TeacherDashboard from './components/TeacherPages/TeacherDashboard';
+import ExamEditor from './components/TeacherPages/ExamEditor';
+import StudentDashboard from './components/StudentPages/StudentDashboard';
+import ExamTaker from './components/StudentPages/ExamTaker';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -136,6 +133,7 @@ const App = () => {
                   <>
                     <Route path="/" element={<TeacherDashboard />} />
                     <Route path="/editor" element={<ExamEditor />} />
+                    <Route path="/editor/:examId" element={<ExamEditor />} />
                     <Route path="*" element={<TeacherDashboard />} />
                   </>
                 )}
