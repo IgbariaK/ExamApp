@@ -59,10 +59,9 @@ class MockDBService {
     this.saveData(data);
   }
 
-  // --- NEW: STUDENT METHODS ---
+  // --- STUDENT METHODS ---
   getAllActiveExams() {
     const data = this.getData();
-    // Students should only see exams that are marked 'ACTIVE'
     return data.exams.filter(exam => exam.status === 'ACTIVE');
   }
 
@@ -75,6 +74,22 @@ class MockDBService {
     const data = this.getData();
     data.submissions.push(submission);
     this.saveData(data);
+  }
+
+  // --- NEW: GRADING METHODS ---
+  getSubmissionsForExam(examId) {
+    const data = this.getData();
+    return data.submissions.filter(sub => sub.examId === examId);
+  }
+
+  updateSubmissionGrade(submissionId, newGrade) {
+    const data = this.getData();
+    const subIndex = data.submissions.findIndex(s => s.id === submissionId);
+    if (subIndex !== -1) {
+      data.submissions[subIndex].finalGrade = newGrade;
+      data.submissions[subIndex].status = 'GRADED';
+      this.saveData(data);
+    }
   }
 }
 
