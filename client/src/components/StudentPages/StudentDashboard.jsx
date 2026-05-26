@@ -1,26 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService';
+import { storageService } from '../../services/StorageService';
 
 const StudentDashboard = () => {
-  const [availableExams, setAvailableExams] = useState([]);
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => storageService.getJson('activeUser', null));
+  const [availableExams] = useState(() => mockDB.getAllActiveExams());
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem('activeUser'));
-    
-    if (storedUser && storedUser.role === 'STUDENT') {
-      setUser(storedUser);
-      // Fetch all active exams for the student to take
-      const exams = mockDB.getAllActiveExams();
-      setAvailableExams(exams);
-    } else {
-      navigate('/');
-    }
-  }, [navigate]);
-
-  if (!user) return null;
+  if (!user || user.role !== 'STUDENT') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>

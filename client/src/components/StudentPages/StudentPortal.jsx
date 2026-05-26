@@ -1,6 +1,6 @@
 // client/src/components/StudentPortal.jsx
-import React, { useState } from 'react';
-import { getExamById } from '../api/examService';
+import { useState } from 'react';
+import { getExamById } from '../../api/examService';
 
 const StudentPortal = () => {
   const [examId, setExamId] = useState('');
@@ -22,7 +22,7 @@ const StudentPortal = () => {
     try {
       const exam = await getExamById(examId);
       setCurrentExam(exam);
-    } catch (err) {
+    } catch {
       setError('Exam not found. Please check the ID and try again.');
     } finally {
       setLoading(false);

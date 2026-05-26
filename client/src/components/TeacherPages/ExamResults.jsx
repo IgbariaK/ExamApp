@@ -1,24 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService';
+import { notifyService } from '../../services/NotifyService';
+import { storageService } from '../../services/StorageService';
 
 const ExamResults = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
-  const [exam, setExam] = useState(null);
-  const [submissions, setSubmissions] = useState([]);
+  const user = storageService.getJson('activeUser', null);
+  const exam = mockDB.getExamById(examId);
+  const [submissions, setSubmissions] = useState(() => mockDB.getSubmissionsForExam(examId));
   const [gradingScores, setGradingScores] = useState({});
-
-  useEffect(() => {
-    const fetchedExam = mockDB.getExamById(examId);
-    if (fetchedExam) {
-      setExam(fetchedExam);
-      setSubmissions(mockDB.getSubmissionsForExam(examId));
-    } else {
-      alert("Exam not found!");
-      navigate('/');
-    }
-  }, [examId, navigate]);
 
   const handleGradeSubmit = (subId, e) => {
     e.preventDefault();
@@ -26,11 +18,13 @@ const ExamResults = () => {
     if (score !== undefined) {
       mockDB.updateSubmissionGrade(subId, Number(score));
       setSubmissions(mockDB.getSubmissionsForExam(examId)); // Refresh the list
-      alert("Grade saved successfully!");
+      notifyService.success('Grade saved successfully!');
     }
   };
 
-  if (!exam) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
+  if (!user || user.role !== 'TEACHER' || !exam) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>

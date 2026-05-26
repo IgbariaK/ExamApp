@@ -1,29 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService';
+import { configurationService } from '../../services/ConfigurationService';
+import { storageService } from '../../services/StorageService';
 
 const TeacherDashboard = () => {
-  const [exams, setExams] = useState([]);
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => storageService.getJson('activeUser', null));
+  const [exams, setExams] = useState(() => {
+    const storedUser = storageService.getJson('activeUser', null);
+    return storedUser?.role === 'TEACHER' ? mockDB.getExamsByTeacher(storedUser.id) : [];
+  });
   const navigate = useNavigate();
+  const statuses = configurationService.get('examStatuses');
 
-  useEffect(() => {
-    // 1. Get the active user from localStorage
-    const storedUser = JSON.parse(localStorage.getItem('activeUser'));
-    
-    // 2. Security check: make sure they are actually a teacher
-    if (storedUser && storedUser.role === 'TEACHER') {
-      setUser(storedUser);
-      // 3. Fetch this specific teacher's exams from the DB
-      const teacherExams = mockDB.getExamsByTeacher(storedUser.id);
-      setExams(teacherExams);
-    } else {
-      // If they aren't a teacher, kick them back to the login screen
-      navigate('/');
-    }
-  }, [navigate]);
+  const handleStatusChange = (examId, status) => {
+    mockDB.updateExamStatus(examId, status);
+    setExams(mockDB.getExamsByTeacher(user.id));
+  };
 
-  if (!user) return null;
+  if (!user || user.role !== 'TEACHER') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
@@ -53,6 +50,15 @@ const TeacherDashboard = () => {
                 </span>
               </div>
               <div>
+                <select
+                  value={exam.status}
+                  onChange={(event) => handleStatusChange(exam.id, event.target.value)}
+                  style={{ marginRight: '10px', padding: '6px 8px', border: '1px solid #bdc3c7', borderRadius: '4px' }}
+                >
+                  {statuses.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
                 <button onClick={() => navigate(`/editor/${exam.id}`)} style={{ marginRight: '10px', padding: '6px 12px', cursor: 'pointer', backgroundColor: '#ecf0f1', border: '1px solid #bdc3c7', borderRadius: '4px' }}>Edit</button>
                 <button onClick={() => navigate(`/results/${exam.id}`)} style={{ padding: '6px 12px', cursor: 'pointer', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px' }}>Results</button>
               </div>

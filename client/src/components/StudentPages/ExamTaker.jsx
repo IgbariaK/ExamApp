@@ -1,24 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService';
+import { notifyService } from '../../services/NotifyService';
+import { storageService } from '../../services/StorageService';
 
 const ExamTaker = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
-  const [exam, setExam] = useState(null);
+  const exam = mockDB.getExamById(examId);
   const [answers, setAnswers] = useState({}); // Stores answers as { questionId: "user text" }
 
-  const user = JSON.parse(localStorage.getItem('activeUser'));
-
-  useEffect(() => {
-    const fetchedExam = mockDB.getExamById(examId);
-    if (fetchedExam) {
-      setExam(fetchedExam);
-    } else {
-      alert("Exam not found!");
-      navigate('/');
-    }
-  }, [examId, navigate]);
+  const user = storageService.getJson('activeUser', null);
 
   const handleAnswerChange = (questionId, value) => {
     setAnswers({
@@ -32,7 +24,6 @@ const ExamTaker = () => {
     
     // Create the submission record
     const submission = {
-      id: 'sub_' + Date.now(),
       examId: exam.id,
       studentId: user.id,
       answers: answers,
@@ -42,11 +33,13 @@ const ExamTaker = () => {
     };
 
     mockDB.submitExam(submission);
-    alert("Exam submitted successfully!");
+    notifyService.success('Exam submitted successfully!');
     navigate('/'); // Send back to dashboard
   };
 
-  if (!exam) return <div>Loading exam...</div>;
+  if (!user || user.role !== 'STUDENT' || !exam || exam.status !== 'ACTIVE') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>

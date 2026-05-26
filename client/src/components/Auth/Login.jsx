@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService'; 
+import { storageService } from '../../services/StorageService';
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
@@ -15,7 +17,7 @@ const Login = ({ onLoginSuccess }) => {
 
     if (user) {
       // Save the active session to local storage
-      localStorage.setItem('activeUser', JSON.stringify(user));
+      storageService.setJson('activeUser', user);
       
       // If a parent component (like AppRouter) passed a callback, trigger it
       if (onLoginSuccess) {
@@ -69,6 +71,10 @@ const Login = ({ onLoginSuccess }) => {
         <p>Teacher: smith@test.com / 1234</p>
         <p>Student: john@test.com / 1234</p>
       </div>
+
+      <p style={{ marginTop: '15px', fontSize: '0.9em' }}>
+        New here? <Link to="/register">Create an account</Link>
+      </p>
     </div>
   );
 };

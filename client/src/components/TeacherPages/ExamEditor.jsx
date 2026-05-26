@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService';
+import { configurationService } from '../../services/ConfigurationService';
+import { notifyService } from '../../services/NotifyService';
+import { storageService } from '../../services/StorageService';
 
 const ExamEditor = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('activeUser'));
+  const { examId } = useParams();
+  const user = storageService.getJson('activeUser', null);
+  const existingExam = examId ? mockDB.getExamById(examId) : null;
+  const statuses = configurationService.get('examStatuses');
 
   // Form State
-  const [title, setTitle] = useState('');
-  const [passingGrade, setPassingGrade] = useState(60);
-  const [questions, setQuestions] = useState([]);
+  const [title, setTitle] = useState(existingExam?.title || '');
+  const [passingGrade, setPassingGrade] = useState(existingExam?.passingGrade || configurationService.get('defaultPassingGrade'));
+  const [status, setStatus] = useState(existingExam?.status || 'DRAFT');
+  const [questions, setQuestions] = useState(existingExam?.questions || []);
 
   // Add a new blank question to the state
   const handleAddQuestion = () => {
@@ -36,24 +43,35 @@ const ExamEditor = () => {
     e.preventDefault();
     
     const newExam = {
-      id: 'exam_' + Date.now(),
+      id: existingExam?.id || 'exam_' + Date.now(),
       teacherId: user.id,
       title: title || 'Untitled Exam',
-      description: 'A new exam created by ' + user.name,
-      status: 'ACTIVE',
+      description: existingExam?.description || 'A new exam created by ' + user.name,
+      status,
       passingGrade: Number(passingGrade),
       questions: questions,
-      createdAt: new Date()
+      createdAt: existingExam?.createdAt || new Date().toISOString()
     };
 
-    mockDB.createExam(newExam);
+    if (existingExam) {
+      mockDB.updateExam(existingExam.id, newExam);
+      notifyService.success('Exam updated successfully!');
+    } else {
+      mockDB.createExam(newExam);
+      notifyService.success('Exam saved successfully!');
+    }
+
     navigate('/'); // Send the teacher back to the dashboard
   };
+
+  if (!user || user.role !== 'TEACHER') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>Create New Exam</h2>
+        <h2>{existingExam ? 'Edit Exam' : 'Create New Exam'}</h2>
         <button onClick={() => navigate('/')} style={{ padding: '8px 12px', cursor: 'pointer' }}>Cancel</button>
       </div>
 
@@ -79,6 +97,17 @@ const ExamEditor = () => {
             min="0" max="100" required
             style={{ width: '100px', padding: '8px' }}
           />
+
+          <label style={{ display: 'block', margin: '15px 0 5px', fontWeight: 'bold' }}>Status:</label>
+          <select
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+            style={{ width: '160px', padding: '8px' }}
+          >
+            {statuses.map((statusOption) => (
+              <option key={statusOption} value={statusOption}>{statusOption}</option>
+            ))}
+          </select>
         </div>
 
         {/* Questions Section */}
@@ -131,7 +160,7 @@ const ExamEditor = () => {
         </div>
 
         <button type="submit" style={{ padding: '15px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', marginTop: '20px' }}>
-          Save Exam & Publish
+          Save Exam
         </button>
       </form>
     </div>

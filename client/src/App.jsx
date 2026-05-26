@@ -1,29 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
 import NavigationMenu from './components/Shared/NavigationMenu';
 import TeacherDashboard from './components/TeacherPages/TeacherDashboard';
 import ExamEditor from './components/TeacherPages/ExamEditor';
 import ExamResults from './components/TeacherPages/ExamResults';
 import StudentDashboard from './components/StudentPages/StudentDashboard';
 import ExamTaker from './components/StudentPages/ExamTaker';
+import StudentGrades from './components/StudentPages/StudentGrades';
+import { storageService } from './services/StorageService';
 
 const App = () => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('activeUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const [user, setUser] = useState(() => storageService.getJson('activeUser', null));
 
   const handleLoginSuccess = (loggedInUser) => {
     setUser(loggedInUser);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('activeUser');
+    storageService.removeItem('activeUser');
     setUser(null);
   };
 
@@ -36,7 +32,10 @@ const App = () => {
         <main>
           <Routes>
             {!user ? (
-              <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+              <>
+                <Route path="/register" element={<Register onRegisterSuccess={handleLoginSuccess} />} />
+                <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+              </>
             ) : (
               <>
                 {user.role === 'TEACHER' && (
@@ -44,6 +43,7 @@ const App = () => {
                     <Route path="/" element={<TeacherDashboard />} />
                     <Route path="/editor" element={<ExamEditor />} />
                     <Route path="/editor/:examId" element={<ExamEditor />} />
+                    <Route path="/results" element={<TeacherDashboard />} />
                     <Route path="/results/:examId" element={<ExamResults />} />
                     <Route path="*" element={<TeacherDashboard />} />
                   </>
@@ -51,6 +51,8 @@ const App = () => {
                 {user.role === 'STUDENT' && (
                   <>
                     <Route path="/" element={<StudentDashboard />} />
+                    <Route path="/exams" element={<StudentDashboard />} />
+                    <Route path="/grades" element={<StudentGrades />} />
                     <Route path="/take-exam/:examId" element={<ExamTaker />} />
                     <Route path="*" element={<StudentDashboard />} />
                   </>

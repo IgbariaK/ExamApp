@@ -1,3 +1,6 @@
+import { loggerService } from './LoggerService';
+import { storageService } from './StorageService';
+
 class MockDBService {
   static instance = null;
   STORAGE_KEY = 'examApp_mockDB';
@@ -18,7 +21,7 @@ class MockDBService {
   }
 
   initializeDB() {
-    const existingData = localStorage.getItem(this.STORAGE_KEY);
+    const existingData = storageService.getItem(this.STORAGE_KEY);
     if (!existingData) {
       const initialData = {
         users: [
@@ -33,19 +36,42 @@ class MockDBService {
   }
 
   getData() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
+    const data = storageService.getJson(this.STORAGE_KEY, null);
+    return data || { users: [], exams: [], submissions: [] };
   }
 
   saveData(data) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    storageService.setJson(this.STORAGE_KEY, data);
   }
 
   // --- TEACHER & AUTH METHODS ---
   loginUser(email, passwordHash) {
     const data = this.getData();
     const user = data.users.find(u => u.email === email && u.passwordHash === passwordHash);
+    loggerService.info(user ? 'User logged in' : 'Failed login attempt', { email });
     return user || null;
+  }
+
+  registerUser({ name, role, email, passwordHash }) {
+    const data = this.getData();
+    const emailExists = data.users.some(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (emailExists) {
+      throw new Error('A user with this email already exists.');
+    }
+
+    const user = {
+      id: `u_${Date.now()}`,
+      name,
+      role,
+      email,
+      passwordHash,
+    };
+
+    data.users.push(user);
+    this.saveData(data);
+    loggerService.info('User registered', { id: user.id, role: user.role });
+    return user;
   }
 
   getExamsByTeacher(teacherId) {
@@ -57,6 +83,28 @@ class MockDBService {
     const data = this.getData();
     data.exams.push(exam);
     this.saveData(data);
+    loggerService.info('Exam created', { id: exam.id, status: exam.status });
+  }
+
+  updateExam(examId, updates) {
+    const data = this.getData();
+    const examIndex = data.exams.findIndex(exam => exam.id === examId);
+
+    if (examIndex === -1) return null;
+
+    data.exams[examIndex] = {
+      ...data.exams[examIndex],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.saveData(data);
+    loggerService.info('Exam updated', { id: examId });
+    return data.exams[examIndex];
+  }
+
+  updateExamStatus(examId, status) {
+    return this.updateExam(examId, { status });
   }
 
   // --- STUDENT METHODS ---
@@ -72,14 +120,24 @@ class MockDBService {
 
   submitExam(submission) {
     const data = this.getData();
-    data.submissions.push(submission);
+    const storedSubmission = {
+      ...submission,
+      id: submission.id || `sub_${Date.now()}`,
+    };
+    data.submissions.push(storedSubmission);
     this.saveData(data);
+    loggerService.info('Exam submitted', { examId: storedSubmission.examId, studentId: storedSubmission.studentId });
   }
 
   // --- NEW: GRADING METHODS ---
   getSubmissionsForExam(examId) {
     const data = this.getData();
     return data.submissions.filter(sub => sub.examId === examId);
+  }
+
+  getSubmissionsByStudent(studentId) {
+    const data = this.getData();
+    return data.submissions.filter(sub => sub.studentId === studentId);
   }
 
   updateSubmissionGrade(submissionId, newGrade) {
@@ -89,6 +147,7 @@ class MockDBService {
       data.submissions[subIndex].finalGrade = newGrade;
       data.submissions[subIndex].status = 'GRADED';
       this.saveData(data);
+      loggerService.info('Submission graded', { submissionId, newGrade });
     }
   }
 }
