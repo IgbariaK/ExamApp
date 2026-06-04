@@ -30,8 +30,8 @@ const ExamResults = () => {
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2>Results: {exam.title}</h2>
-        <button onClick={() => navigate('/')} style={{ padding: '8px 12px', cursor: 'pointer', backgroundColor: '#ecf0f1', border: '1px solid #bdc3c7', borderRadius: '4px' }}>
-          Back to Dashboard
+        <button onClick={() => navigate('/results')} style={{ padding: '8px 12px', cursor: 'pointer', backgroundColor: '#ecf0f1', border: '1px solid #bdc3c7', borderRadius: '4px' }}>
+          Back to Results
         </button>
       </div>
 

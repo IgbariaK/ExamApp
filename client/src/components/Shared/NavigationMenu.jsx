@@ -45,7 +45,7 @@ const NavigationMenu = ({ user, onLogout }) => {
         {/* Dynamic Links for Teachers */}
         {user.role === 'TEACHER' && (
           <>
-            <NavLink to="/" style={({ isActive }) => isActive ? activeStyle : linkStyle}>Dashboard</NavLink>
+            <NavLink to="/" end style={({ isActive }) => isActive ? activeStyle : linkStyle}>Dashboard</NavLink>
             <NavLink to="/editor" style={({ isActive }) => isActive ? activeStyle : linkStyle}>Exam Editor</NavLink>
             <NavLink to="/results" style={({ isActive }) => isActive ? activeStyle : linkStyle}>Results</NavLink>
           </>
@@ -54,7 +54,7 @@ const NavigationMenu = ({ user, onLogout }) => {
         {/* Dynamic Links for Students */}
         {user.role === 'STUDENT' && (
           <>
-            <NavLink to="/" style={({ isActive }) => isActive ? activeStyle : linkStyle}>Dashboard</NavLink>
+            <NavLink to="/" end style={({ isActive }) => isActive ? activeStyle : linkStyle}>Dashboard</NavLink>
             <NavLink to="/exams" style={({ isActive }) => isActive ? activeStyle : linkStyle}>Available Exams</NavLink>
             <NavLink to="/grades" style={({ isActive }) => isActive ? activeStyle : linkStyle}>My Grades</NavLink>
           </>

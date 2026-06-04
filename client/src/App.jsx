@@ -6,6 +6,7 @@ import NavigationMenu from './components/Shared/NavigationMenu';
 import TeacherDashboard from './components/TeacherPages/TeacherDashboard';
 import ExamEditor from './components/TeacherPages/ExamEditor';
 import ExamResults from './components/TeacherPages/ExamResults';
+import TeacherResultsOverview from './components/TeacherPages/TeacherResultsOverview';
 import StudentDashboard from './components/StudentPages/StudentDashboard';
 import ExamTaker from './components/StudentPages/ExamTaker';
 import StudentGrades from './components/StudentPages/StudentGrades';
@@ -43,7 +44,7 @@ const App = () => {
                     <Route path="/" element={<TeacherDashboard />} />
                     <Route path="/editor" element={<ExamEditor />} />
                     <Route path="/editor/:examId" element={<ExamEditor />} />
-                    <Route path="/results" element={<TeacherDashboard />} />
+                    <Route path="/results" element={<TeacherResultsOverview />} />
                     <Route path="/results/:examId" element={<ExamResults />} />
                     <Route path="*" element={<TeacherDashboard />} />
                   </>
