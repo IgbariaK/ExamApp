@@ -1,5 +1,6 @@
 import { loggerService } from './LoggerService';
 import { storageService } from './StorageService';
+import { configurationService } from './ConfigurationService';
 
 class MockDBService {
   static instance = null;
@@ -10,7 +11,9 @@ class MockDBService {
       return MockDBService.instance;
     }
     MockDBService.instance = this;
-    this.initializeDB();
+    if (!this.usesServer()) {
+      this.initializeDB();
+    }
   }
 
   static getInstance() {
@@ -35,6 +38,32 @@ class MockDBService {
     }
   }
 
+  usesServer() {
+    return configurationService.get('dataSource') === 'server';
+  }
+
+  request(method, path, body) {
+    const request = new XMLHttpRequest();
+    request.open(method, `${configurationService.get('apiBaseUrl')}${path}`, false);
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.send(body === undefined ? null : JSON.stringify(body));
+
+    if (request.status < 200 || request.status >= 300) {
+      const message = request.responseText
+        ? JSON.parse(request.responseText).message
+        : `Server request failed with status ${request.status}.`;
+      throw new Error(message);
+    }
+
+    return request.responseText ? JSON.parse(request.responseText) : null;
+  }
+
+  query(collection, filters = {}) {
+    const params = new URLSearchParams(filters);
+    const queryString = params.size ? `?${params}` : '';
+    return this.request('GET', `/${collection}${queryString}`);
+  }
+
   getData() {
     const data = storageService.getJson(this.STORAGE_KEY, null);
     return data || { users: [], exams: [], submissions: [] };
@@ -46,6 +75,9 @@ class MockDBService {
 
   // --- TEACHER & AUTH METHODS ---
   loginUser(email, passwordHash) {
+    if (this.usesServer()) {
+      return this.request('POST', '/auth/login', { email, passwordHash });
+    }
     const data = this.getData();
     const user = data.users.find(u => u.email === email && u.passwordHash === passwordHash);
     loggerService.info(user ? 'User logged in' : 'Failed login attempt', { email });
@@ -53,6 +85,15 @@ class MockDBService {
   }
 
   registerUser({ name, role, email, passwordHash }) {
+    if (this.usesServer()) {
+      return this.request('POST', '/users', {
+        id: `u_${Date.now()}`,
+        name,
+        role,
+        email,
+        passwordHash,
+      });
+    }
     const data = this.getData();
     const emailExists = data.users.some(u => u.email.toLowerCase() === email.toLowerCase());
 
@@ -75,11 +116,17 @@ class MockDBService {
   }
 
   getExamsByTeacher(teacherId) {
+    if (this.usesServer()) {
+      return this.query('exams', { teacherId });
+    }
     const data = this.getData();
     return data.exams.filter(exam => exam.teacherId === teacherId);
   }
 
   createExam(exam) {
+    if (this.usesServer()) {
+      return this.request('POST', '/exams', exam);
+    }
     const data = this.getData();
     data.exams.push(exam);
     this.saveData(data);
@@ -87,6 +134,12 @@ class MockDBService {
   }
 
   updateExam(examId, updates) {
+    if (this.usesServer()) {
+      return this.request('PATCH', `/exams/${examId}`, {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+    }
     const data = this.getData();
     const examIndex = data.exams.findIndex(exam => exam.id === examId);
 
@@ -109,16 +162,33 @@ class MockDBService {
 
   // --- STUDENT METHODS ---
   getAllActiveExams() {
+    if (this.usesServer()) {
+      return this.query('exams', { status: 'ACTIVE' });
+    }
     const data = this.getData();
     return data.exams.filter(exam => exam.status === 'ACTIVE');
   }
 
   getExamById(examId) {
+    if (this.usesServer()) {
+      try {
+        return this.request('GET', `/exams/${examId}`);
+      } catch (error) {
+        if (error.message === 'Record not found.') return null;
+        throw error;
+      }
+    }
     const data = this.getData();
     return data.exams.find(exam => exam.id === examId) || null;
   }
 
   submitExam(submission) {
+    if (this.usesServer()) {
+      return this.request('POST', '/submissions', {
+        ...submission,
+        id: submission.id || `sub_${Date.now()}`,
+      });
+    }
     const data = this.getData();
     const storedSubmission = {
       ...submission,
@@ -131,16 +201,28 @@ class MockDBService {
 
   // --- NEW: GRADING METHODS ---
   getSubmissionsForExam(examId) {
+    if (this.usesServer()) {
+      return this.query('submissions', { examId });
+    }
     const data = this.getData();
     return data.submissions.filter(sub => sub.examId === examId);
   }
 
   getSubmissionsByStudent(studentId) {
+    if (this.usesServer()) {
+      return this.query('submissions', { studentId });
+    }
     const data = this.getData();
     return data.submissions.filter(sub => sub.studentId === studentId);
   }
 
   updateSubmissionGrade(submissionId, newGrade) {
+    if (this.usesServer()) {
+      return this.request('PATCH', `/submissions/${submissionId}`, {
+        finalGrade: newGrade,
+        status: 'GRADED',
+      });
+    }
     const data = this.getData();
     const subIndex = data.submissions.findIndex(s => s.id === submissionId);
     if (subIndex !== -1) {

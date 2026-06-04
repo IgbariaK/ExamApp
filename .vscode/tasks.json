@@ -1,0 +1,69 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "client: local data",
+      "type": "npm",
+      "script": "client",
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "exam-app", "reveal": "always" },
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^(.*)$", "message": 1 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local:"
+        }
+      }
+    },
+    {
+      "label": "client: server data",
+      "type": "npm",
+      "script": "client:server-data",
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "exam-app", "reveal": "always" },
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^(.*)$", "message": 1 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local:"
+        }
+      }
+    },
+    {
+      "label": "server",
+      "type": "npm",
+      "script": "server",
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "exam-app", "reveal": "always" },
+      "problemMatcher": {
+        "owner": "node",
+        "pattern": { "regexp": "^(.*)$", "message": 1 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "node --watch",
+          "endsPattern": "ExamApp server listening"
+        }
+      }
+    },
+    {
+      "label": "run: client only",
+      "dependsOn": ["client: local data"],
+      "problemMatcher": []
+    },
+    {
+      "label": "run: server only",
+      "dependsOn": ["server"],
+      "problemMatcher": []
+    },
+    {
+      "label": "run: client + server",
+      "dependsOrder": "parallel",
+      "dependsOn": ["server", "client: server data"],
+      "problemMatcher": []
+    }
+  ]
+}
