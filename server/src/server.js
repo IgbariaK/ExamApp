@@ -13,11 +13,32 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL;
 let db = useJson ? loadJsonDb() : createInitialData();
 
 const persistLocalDb = () => {
   if (useJson) {
     saveJsonDb(db);
+  }
+};
+
+const notifyMicroservice = async (event) => {
+  if (!notificationServiceUrl) return;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1500);
+
+    await fetch(`${notificationServiceUrl}/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+  } catch (error) {
+    console.warn(`Notification microservice unavailable: ${error.message}`);
   }
 };
 
@@ -436,7 +457,14 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
          RETURNING *`,
         [submission.examId, submission.studentId, JSON.stringify(submission.answers), null, submission.status]
       );
-      return response.status(201).json(dbSubmissionToClient(result.rows[0]));
+      const storedSubmission = dbSubmissionToClient(result.rows[0]);
+      await notifyMicroservice({
+        type: 'EXAM_SUBMITTED',
+        examId: storedSubmission.examId,
+        studentId: storedSubmission.studentId,
+        submissionId: storedSubmission.id,
+      });
+      return response.status(201).json(storedSubmission);
     }
 
     const duplicateSubmission = db.submissions.some(
@@ -450,6 +478,12 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
     const storedSubmission = { ...submission, id: request.body.id || `sub_${Date.now()}` };
     db.submissions.push(storedSubmission);
     persistLocalDb();
+    await notifyMicroservice({
+      type: 'EXAM_SUBMITTED',
+      examId: storedSubmission.examId,
+      studentId: storedSubmission.studentId,
+      submissionId: storedSubmission.id,
+    });
     response.status(201).json(storedSubmission);
   } catch (error) {
     if (error.code === '23505') {
@@ -477,7 +511,15 @@ app.patch('/api/submissions/:id', authenticate, requireRole('TEACHER'), async (r
          RETURNING *`,
         [request.params.id, request.body.finalGrade, request.body.score, request.body.status]
       );
-      return response.json(dbSubmissionToClient(result.rows[0]));
+      const updatedSubmission = dbSubmissionToClient(result.rows[0]);
+      await notifyMicroservice({
+        type: 'SUBMISSION_GRADED',
+        examId: updatedSubmission.examId,
+        studentId: updatedSubmission.studentId,
+        submissionId: updatedSubmission.id,
+        finalGrade: updatedSubmission.finalGrade,
+      });
+      return response.json(updatedSubmission);
     }
 
     const index = db.submissions.findIndex((item) => String(item.id) === request.params.id);
@@ -487,6 +529,13 @@ app.patch('/api/submissions/:id', authenticate, requireRole('TEACHER'), async (r
 
     db.submissions[index] = { ...db.submissions[index], ...request.body, id: db.submissions[index].id };
     persistLocalDb();
+    await notifyMicroservice({
+      type: 'SUBMISSION_GRADED',
+      examId: db.submissions[index].examId,
+      studentId: db.submissions[index].studentId,
+      submissionId: db.submissions[index].id,
+      finalGrade: db.submissions[index].finalGrade,
+    });
     response.json(db.submissions[index]);
   } catch (error) {
     next(error);

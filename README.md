@@ -16,6 +16,7 @@ Live app: https://exam-app-sage-one.vercel.app
 - Database: PostgreSQL with JSONB question and answer storage
 - Authentication: signed JWT-style bearer tokens plus salted password hashing
 - Local infrastructure: Docker Compose for PostgreSQL
+- Docker-based notification microservice
 
 ## Architecture
 
@@ -91,6 +92,7 @@ Each student can submit only once per exam. This is enforced by the backend and 
 - PostgreSQL schema with users, exams, and submissions
 - JSONB storage for flexible questions and answers
 - Backend route authorization for teacher/student workflows
+- Docker-based notification microservice for exam submission and grading events
 
 ## Data Modes
 
@@ -143,6 +145,22 @@ For local JSON storage without PostgreSQL:
 npm run server:json
 npm run client:server-data
 ```
+
+For the Docker-based notification microservice:
+
+```powershell
+npm run microservice:up
+$env:NOTIFICATION_SERVICE_URL = "http://localhost:4001"
+npm run server:postgres
+```
+
+The notification service exposes:
+
+- `GET http://localhost:4001/health`
+- `POST http://localhost:4001/notifications`
+- `GET http://localhost:4001/notifications`
+
+The backend sends notification events when a student submits an exam and when a teacher grades a submission.
 
 Run the app:
 
@@ -260,6 +278,9 @@ Useful commands:
 
 ```powershell
 npm run db:up
+npm run microservice:up
+npm run microservice:logs
+npm run microservice:down
 npm run server:postgres
 npm run server:json
 npm run db:schema
@@ -299,6 +320,7 @@ The recommended deployment setup is:
 Vercel static hosting -> React client
 Vercel serverless function -> Express API
 Neon -> PostgreSQL database
+Docker Compose -> Local PostgreSQL and notification microservice
 ```
 
 ### 1. Neon Database
@@ -370,6 +392,7 @@ Implemented:
 - Teacher/student authorization on API routes
 - Exam creation, publishing, taking, submission review, and grading
 - Docker Compose for local PostgreSQL
+- Docker Compose notification microservice
 - Documentation and architecture overview
 - Vercel deployment configuration
 - Neon-compatible hosted PostgreSQL configuration
