@@ -19,19 +19,60 @@ Live app: https://exam-app-sage-one.vercel.app
 
 ## Architecture
 
-```text
-React Client
-  |
-  | HTTP /api with bearer token
-  v
-Express API
-  |
-  | SQL queries
-  v
-PostgreSQL
+```mermaid
+flowchart LR
+  User[Teacher / Student] --> Client[React + Vite Client]
+  Client -->|HTTP /api + Bearer token| API[Express API]
+  API -->|SQL via pg| DB[(Neon PostgreSQL)]
+  API --> Auth[JWT-style token auth]
+  Client --> Storage[Local Storage Session]
 ```
 
 The client uses `MockDBService` as a data access layer. In client mode it stores data in browser local storage. In server mode it calls the Express API. The server can run against PostgreSQL for persistent storage or memory mode for quick demos.
+
+## Database Diagram
+
+```mermaid
+erDiagram
+  USERS ||--o{ EXAMS : creates
+  USERS ||--o{ SUBMISSIONS : submits
+  EXAMS ||--o{ SUBMISSIONS : receives
+
+  USERS {
+    uuid id PK
+    varchar name
+    varchar email UK
+    varchar password_hash
+    varchar role
+    timestamp created_at
+  }
+
+  EXAMS {
+    uuid id PK
+    uuid teacher_id FK
+    varchar title
+    text description
+    varchar status
+    integer time_limit
+    integer passing_grade
+    jsonb questions
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  SUBMISSIONS {
+    uuid id PK
+    uuid exam_id FK
+    uuid student_id FK
+    integer score
+    integer final_grade
+    varchar status
+    jsonb answers
+    timestamp submitted_at
+  }
+```
+
+Each student can submit only once per exam. This is enforced by the backend and by a unique database constraint on `submissions(exam_id, student_id)`.
 
 ## Features
 
@@ -140,6 +181,60 @@ Authenticated submission routes:
 
 Teacher-only actions include creating exams, updating exams, deleting exams, reading submissions for owned exams, and grading submissions. Student-only actions include submitting exams and reading personal submissions.
 
+## API Examples
+
+Login:
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "smith@test.com",
+  "passwordHash": "1234"
+}
+```
+
+Create an exam as a teacher:
+
+```http
+POST /api/exams
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "JavaScript Basics",
+  "status": "DRAFT",
+  "passingGrade": 60,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "OPEN_ENDED",
+      "text": "Explain closures.",
+      "correctAnswer": "A function that remembers its lexical scope.",
+      "points": 10
+    }
+  ]
+}
+```
+
+Submit an exam as a student:
+
+```http
+POST /api/submissions
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "examId": "exam-id",
+  "answers": {
+    "q1": "A closure remembers variables from the outer scope."
+  }
+}
+```
+
+If the same student submits the same exam again, the API returns `409 Conflict`.
+
 ## Database
 
 The PostgreSQL schema is in `server/src/db/schema.sql`.
@@ -160,6 +255,28 @@ npm run db:test-exam
 npm run db:query-jsonb
 npm run db:down
 ```
+
+## Security
+
+- Passwords are stored as salted PBKDF2 hashes.
+- Login returns a signed bearer token used by protected API routes.
+- Teacher routes verify that a teacher only accesses their own exams and submissions.
+- Student routes verify that a student only accesses active exams and their own submissions.
+- `.env` is ignored by Git so database credentials and secrets are not pushed to GitHub.
+- Production deployment uses Vercel environment variables for `DATABASE_URL`, `JWT_SECRET`, and related settings.
+
+## Demo Flow
+
+1. Open the live app.
+2. Log in as `smith@test.com / 1234`.
+3. Create a new exam from the teacher dashboard.
+4. Add questions and set the exam status to `ACTIVE`.
+5. Log out and log in as `john@test.com / 1234`.
+6. Open the active exam and submit answers.
+7. Confirm the exam now shows as `Submitted` and cannot be taken again.
+8. Log back in as the teacher.
+9. Open results, review the submission, and assign a final grade.
+10. Log in as the student and view the grade.
 
 ## Deployment
 
@@ -244,12 +361,14 @@ Implemented:
 - Vercel deployment configuration
 - Neon-compatible hosted PostgreSQL configuration
 - Full-stack deployment path with hosted frontend, API, and database
+- Architecture and database diagrams
+- API examples, security notes, and demo flow
 
 Still recommended before final deployment:
 
 - Add automated tests for backend authorization and exam workflows
 - Add a proper CI workflow
-- Add screenshots or a final demo video link
+- Add screenshots or a final demo video link if required by the course
 
 ## Verification
 
