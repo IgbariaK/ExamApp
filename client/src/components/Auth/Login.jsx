@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { mockDB } from '../../services/MockDBService'; 
 import { storageService } from '../../services/StorageService';
 
@@ -7,28 +7,34 @@ const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
     setError(''); // Reset error state
 
-    // Call the OOP Mock DB Service to verify credentials
-    const user = mockDB.loginUser(email, password);
+    try {
+      // Call the OOP Mock DB Service to verify credentials
+      const user = mockDB.loginUser(email.trim(), password);
 
-    if (user) {
-      // Save the active session to local storage
-      storageService.setJson('activeUser', user);
-      
-      // If a parent component (like AppRouter) passed a callback, trigger it
-      if (onLoginSuccess) {
-        onLoginSuccess(user);
+      if (user) {
+        // Save the active session to local storage
+        storageService.setJson('activeUser', user);
+
+        // If a parent component (like AppRouter) passed a callback, trigger it
+        if (onLoginSuccess) {
+          onLoginSuccess(user);
+          navigate('/');
+        } else {
+          // Fallback for testing before the router is built
+          alert(`Welcome back, ${user.name}!`);
+          window.location.reload();
+        }
       } else {
-        // Fallback for testing before the router is built
-        alert(`Welcome back, ${user.name}!`);
-        window.location.reload();
+        setError('Invalid email or password. Please try again.');
       }
-    } else {
-      setError('Invalid email or password. Please try again.');
+    } catch (loginError) {
+      setError(loginError.message || 'Login failed. Make sure the server is running and try again.');
     }
   };
 
