@@ -3,7 +3,7 @@ import { pool } from './db/connect.js';
 import { createToken, hashPassword, verifyPassword, verifyToken } from './auth.js';
 import { createInitialData } from './initialData.js';
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT) || 3001;
 const serverDataSource = process.env.SERVER_DATA_SOURCE || 'auto';
 const usePostgres = serverDataSource !== 'memory' && Boolean(process.env.DATABASE_URL);
@@ -481,6 +481,10 @@ app.use((error, _request, response, _next) => {
   response.status(500).json({ message: error.message || 'Unexpected server error.' });
 });
 
-app.listen(port, () => {
-  console.log(`ExamApp server listening on http://localhost:${port}`);
-});
+if (process.env.VERCEL !== '1') {
+  app.listen(port, () => {
+    console.log(`ExamApp server listening on http://localhost:${port}`);
+  });
+}
+
+export default app;

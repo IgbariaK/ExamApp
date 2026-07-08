@@ -158,8 +158,8 @@ npm run db:down
 The recommended deployment setup is:
 
 ```text
-GitHub Pages or another static host -> React client
-Render web service -> Express API
+Vercel static hosting -> React client
+Vercel serverless function -> Express API
 Neon -> PostgreSQL database
 ```
 
@@ -179,39 +179,41 @@ Seed the database:
 npm run db:seed
 ```
 
-### 2. Render Backend
+### 2. Vercel App
 
-This repo includes `render.yaml` for the Express API. In Render, create a new Blueprint/Web Service from the GitHub repository.
+This repo includes `vercel.json` and `api/index.js` for deploying the React client and Express API together on Vercel.
 
-Set these environment variables in Render:
+In Vercel, import this GitHub repository and set these environment variables:
 
 ```text
 DATABASE_URL=your Neon pooled connection string
 PGSSLMODE=require
 SERVER_DATA_SOURCE=postgres
 JWT_SECRET=a long random secret
-CLIENT_ORIGIN=https://your-frontend-url
+CLIENT_ORIGIN=https://your-vercel-app.vercel.app
 ```
 
-Render should use:
+The Vercel project should use:
 
 ```text
-Root directory: server
-Build command: npm install
-Start command: npm start
-Health check path: /api/health
+Framework preset: Other
+Build command: npm --prefix client install && npm --prefix client run build -- --mode server
+Output directory: client/dist
 ```
 
-### 3. Frontend
+After deployment, verify the API:
 
-When the backend is deployed, build the client with:
-
-```env
-VITE_DATA_SOURCE=server
-VITE_API_BASE_URL=https://your-render-service.onrender.com/api
+```text
+https://your-vercel-app.vercel.app/api/health
 ```
 
-For local development, keep using:
+Expected response:
+
+```json
+{ "status": "ok", "dataSource": "postgres" }
+```
+
+For local development, keep using two terminals:
 
 ```powershell
 npm run server
@@ -231,8 +233,9 @@ Implemented:
 - Exam creation, publishing, taking, submission review, and grading
 - Docker Compose for local PostgreSQL
 - Documentation and architecture overview
-- Render deployment blueprint
+- Vercel deployment configuration
 - Neon-compatible hosted PostgreSQL configuration
+- Full-stack deployment path with hosted frontend, API, and database
 
 Still recommended before final deployment:
 

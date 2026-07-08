@@ -1,6 +1,7 @@
 {
   "name": "exam-app",
   "private": true,
+  "type": "module",
   "scripts": {
     "client": "npm --prefix client run dev:client",
     "client:server-data": "npm --prefix client run dev:server",
@@ -14,5 +15,9 @@
     "db:seed": "npm --prefix server run db:seed",
     "db:test-exam": "npm --prefix server run db:test-exam",
     "db:query-jsonb": "npm --prefix server run db:query-jsonb"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.16.0"
   }
 }
