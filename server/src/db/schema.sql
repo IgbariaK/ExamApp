@@ -18,7 +18,7 @@ CREATE TABLE exams (
   teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR(180) NOT NULL,
   description TEXT,
-  status VARCHAR(20) NOT NULL CHECK (status IN ('DRAFT', 'ACTIVE', 'ARCHIVED')),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('DRAFT', 'ACTIVE', 'GRADING', 'COMPLETED', 'ARCHIVED')),
   time_limit INTEGER NOT NULL DEFAULT 60,
   passing_grade INTEGER NOT NULL CHECK (passing_grade BETWEEN 0 AND 100),
   questions JSONB NOT NULL DEFAULT '[]'::jsonb,

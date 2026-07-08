@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hashPassword } from '../auth.js';
 import { closePool, pool } from './connect.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -12,9 +13,9 @@ const jsExamId = '44444444-4444-4444-8444-444444444444';
 const reactExamId = '55555555-5555-4555-8555-555555555555';
 
 const users = [
-  [teacherId, 'Dr. Smith', 'smith@test.com', '1234', 'TEACHER'],
-  [studentId, 'John Doe', 'john@test.com', '1234', 'STUDENT'],
-  [secondStudentId, 'Maya Cohen', 'maya@test.com', '1234', 'STUDENT'],
+  [teacherId, 'Dr. Smith', 'smith@test.com', hashPassword('1234'), 'TEACHER'],
+  [studentId, 'John Doe', 'john@test.com', hashPassword('1234'), 'STUDENT'],
+  [secondStudentId, 'Maya Cohen', 'maya@test.com', hashPassword('1234'), 'STUDENT'],
 ];
 
 const exams = [

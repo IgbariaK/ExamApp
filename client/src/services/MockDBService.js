@@ -46,6 +46,10 @@ class MockDBService {
     const request = new XMLHttpRequest();
     request.open(method, `${configurationService.get('apiBaseUrl')}${path}`, false);
     request.setRequestHeader('Content-Type', 'application/json');
+    const activeUser = storageService.getJson('activeUser', null);
+    if (activeUser?.token) {
+      request.setRequestHeader('Authorization', `Bearer ${activeUser.token}`);
+    }
     request.send(body === undefined ? null : JSON.stringify(body));
 
     if (request.status < 200 || request.status >= 300) {
