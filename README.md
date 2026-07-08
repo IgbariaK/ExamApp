@@ -2,6 +2,8 @@
 
 ExamApp is a full-stack exam management system for lecturers and students. Lecturers can create exams, manage questions, publish exams, review submissions, and publish grades. Students can log in, view available exams, submit answers, and review grades.
 
+Live app: https://exam-app-sage-one.vercel.app
+
 ## Tech Stack
 
 - Frontend: React, Vite, React Router
@@ -204,7 +206,7 @@ Output directory: client/dist
 After deployment, verify the API:
 
 ```text
-https://your-vercel-app.vercel.app/api/health
+https://exam-app-sage-one.vercel.app/api/health
 ```
 
 Expected response:
