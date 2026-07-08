@@ -3,3 +3,5 @@ dist/
 .env
 .agents/
 skills-lock.json
+server/data/
+data/

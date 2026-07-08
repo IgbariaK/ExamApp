@@ -110,8 +110,11 @@ Runs the Express API and starts the React app configured to call `/api`.
 Server storage is controlled by `SERVER_DATA_SOURCE`:
 
 - `SERVER_DATA_SOURCE=postgres` uses PostgreSQL when `DATABASE_URL` is configured.
+- `SERVER_DATA_SOURCE=json` uses a local JSON file for persistent local development.
 - `SERVER_DATA_SOURCE=memory` forces in-memory demo data.
 - If omitted, the server uses PostgreSQL when `DATABASE_URL` exists.
+
+Local JSON data is stored at `server/data/exam-app-db.json` by default. The path can be changed with `JSON_DB_PATH`.
 
 ## Setup
 
@@ -130,7 +133,15 @@ For local Docker PostgreSQL:
 npm run db:up
 $env:DATABASE_URL = "postgres://exam_app:exam_app_password@localhost:5432/exam_app"
 $env:PGSSLMODE = "disable"
+$env:SERVER_DATA_SOURCE = "postgres"
 npm run db:seed
+```
+
+For local JSON storage without PostgreSQL:
+
+```powershell
+npm run server:json
+npm run client:server-data
 ```
 
 Run the app:
@@ -249,6 +260,8 @@ Useful commands:
 
 ```powershell
 npm run db:up
+npm run server:postgres
+npm run server:json
 npm run db:schema
 npm run db:seed
 npm run db:test-exam

@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "dev:json": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:SERVER_DATA_SOURCE='json'; node --watch src/server.js\"",
+    "dev:postgres": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:SERVER_DATA_SOURCE='postgres'; node --watch src/server.js\"",
     "db:schema": "node src/db/runSchema.js",
     "db:seed": "node src/db/seedPostgres.js",
     "db:add-single-submission-constraint": "node src/db/addSingleSubmissionConstraint.js",

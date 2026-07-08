@@ -2,16 +2,24 @@ import express from 'express';
 import { pool } from './db/connect.js';
 import { createToken, hashPassword, verifyPassword, verifyToken } from './auth.js';
 import { createInitialData } from './initialData.js';
+import { loadJsonDb, resetJsonDb, saveJsonDb } from './jsonStore.js';
 
 export const app = express();
 const port = Number(process.env.PORT) || 3001;
 const serverDataSource = process.env.SERVER_DATA_SOURCE || 'auto';
-const usePostgres = serverDataSource !== 'memory' && Boolean(process.env.DATABASE_URL);
+const useJson = serverDataSource === 'json';
+const usePostgres = serverDataSource !== 'memory' && !useJson && Boolean(process.env.DATABASE_URL);
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-let db = createInitialData();
+let db = useJson ? loadJsonDb() : createInitialData();
+
+const persistLocalDb = () => {
+  if (useJson) {
+    saveJsonDb(db);
+  }
+};
 
 app.use((request, response, next) => {
   const origin = request.get('origin');
@@ -115,7 +123,7 @@ const canTeacherAccessExam = async (teacherId, examId) => {
 };
 
 app.get('/api/health', (_request, response) => {
-  response.json({ status: 'ok', dataSource: usePostgres ? 'postgres' : 'memory' });
+  response.json({ status: 'ok', dataSource: usePostgres ? 'postgres' : useJson ? 'json' : 'memory' });
 });
 
 app.post('/api/auth/login', async (request, response, next) => {
@@ -150,7 +158,7 @@ app.post('/api/auth/login', async (request, response, next) => {
 });
 
 app.post('/api/reset', (_request, response) => {
-  db = createInitialData();
+  db = useJson ? resetJsonDb() : createInitialData();
   response.json(db);
 });
 
@@ -187,6 +195,7 @@ app.post('/api/users', async (request, response, next) => {
       passwordHash: hashPassword(passwordHash),
     };
     db.users.push(user);
+    persistLocalDb();
 
     response.status(201).json({ ...publicUser(user), token: createToken(user) });
   } catch (error) {
@@ -298,6 +307,7 @@ app.post('/api/exams', authenticate, requireRole('TEACHER'), async (request, res
 
     const storedExam = { ...exam, id: exam.id || `exam_${Date.now()}` };
     db.exams.push(storedExam);
+    persistLocalDb();
     response.status(201).json(storedExam);
   } catch (error) {
     next(error);
@@ -337,6 +347,7 @@ app.patch('/api/exams/:id', authenticate, requireRole('TEACHER'), async (request
 
     const index = db.exams.findIndex((item) => String(item.id) === request.params.id);
     db.exams[index] = { ...db.exams[index], ...request.body, id: db.exams[index].id, teacherId: request.user.sub };
+    persistLocalDb();
     response.json(db.exams[index]);
   } catch (error) {
     next(error);
@@ -353,6 +364,8 @@ app.delete('/api/exams/:id', authenticate, requireRole('TEACHER'), async (reques
       await pool.query('DELETE FROM exams WHERE id = $1', [request.params.id]);
     } else {
       db.exams = db.exams.filter((item) => String(item.id) !== request.params.id);
+      db.submissions = db.submissions.filter((item) => String(item.examId) !== request.params.id);
+      persistLocalDb();
     }
 
     response.status(204).end();
@@ -436,6 +449,7 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
 
     const storedSubmission = { ...submission, id: request.body.id || `sub_${Date.now()}` };
     db.submissions.push(storedSubmission);
+    persistLocalDb();
     response.status(201).json(storedSubmission);
   } catch (error) {
     if (error.code === '23505') {
@@ -472,6 +486,7 @@ app.patch('/api/submissions/:id', authenticate, requireRole('TEACHER'), async (r
     }
 
     db.submissions[index] = { ...db.submissions[index], ...request.body, id: db.submissions[index].id };
+    persistLocalDb();
     response.json(db.submissions[index]);
   } catch (error) {
     next(error);
