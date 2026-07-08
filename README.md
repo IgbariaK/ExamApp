@@ -153,6 +153,71 @@ npm run db:query-jsonb
 npm run db:down
 ```
 
+## Deployment
+
+The recommended deployment setup is:
+
+```text
+GitHub Pages or another static host -> React client
+Render web service -> Express API
+Neon -> PostgreSQL database
+```
+
+### 1. Neon Database
+
+Create a Neon project and copy the pooled connection string. Put it in your local `.env` as:
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
+PGSSLMODE=require
+SERVER_DATA_SOURCE=postgres
+```
+
+Seed the database:
+
+```powershell
+npm run db:seed
+```
+
+### 2. Render Backend
+
+This repo includes `render.yaml` for the Express API. In Render, create a new Blueprint/Web Service from the GitHub repository.
+
+Set these environment variables in Render:
+
+```text
+DATABASE_URL=your Neon pooled connection string
+PGSSLMODE=require
+SERVER_DATA_SOURCE=postgres
+JWT_SECRET=a long random secret
+CLIENT_ORIGIN=https://your-frontend-url
+```
+
+Render should use:
+
+```text
+Root directory: server
+Build command: npm install
+Start command: npm start
+Health check path: /api/health
+```
+
+### 3. Frontend
+
+When the backend is deployed, build the client with:
+
+```env
+VITE_DATA_SOURCE=server
+VITE_API_BASE_URL=https://your-render-service.onrender.com/api
+```
+
+For local development, keep using:
+
+```powershell
+npm run server
+npm run client:server-data
+```
+
 ## Requirement Coverage
 
 Implemented:
@@ -166,11 +231,11 @@ Implemented:
 - Exam creation, publishing, taking, submission review, and grading
 - Docker Compose for local PostgreSQL
 - Documentation and architecture overview
+- Render deployment blueprint
+- Neon-compatible hosted PostgreSQL configuration
 
 Still recommended before final deployment:
 
-- Deploy backend API and PostgreSQL to a cloud provider
-- Configure production environment variables
 - Add automated tests for backend authorization and exam workflows
 - Add a proper CI workflow
 - Add screenshots or a final demo video link

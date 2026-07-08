@@ -7,7 +7,28 @@ const app = express();
 const port = Number(process.env.PORT) || 3001;
 const serverDataSource = process.env.SERVER_DATA_SOURCE || 'auto';
 const usePostgres = serverDataSource !== 'memory' && Boolean(process.env.DATABASE_URL);
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 let db = createInitialData();
+
+app.use((request, response, next) => {
+  const origin = request.get('origin');
+  if (origin && allowedOrigins.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Vary', 'Origin');
+  }
+
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+
+  if (request.method === 'OPTIONS') {
+    return response.status(204).end();
+  }
+
+  next();
+});
 
 app.use(express.json());
 app.use((request, response, next) => {
