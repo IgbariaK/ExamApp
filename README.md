@@ -4,6 +4,11 @@ ExamApp is a full-stack exam management system for lecturers and students. Lectu
 
 Live app: https://exam-app-sage-one.vercel.app
 
+## Team
+
+- Khaled Igbaria - 211669700
+- Tamer Khatib - 314742958
+
 ## Tech Stack
 
 - Frontend: React, Vite, React Router
