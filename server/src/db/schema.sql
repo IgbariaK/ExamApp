@@ -36,6 +36,7 @@ CREATE TABLE submissions (
   status VARCHAR(20) NOT NULL CHECK (status IN ('SUBMITTED', 'GRADED')),
   answers JSONB NOT NULL DEFAULT '{}'::jsonb,
   submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT one_submission_per_student_exam UNIQUE (exam_id, student_id),
   CONSTRAINT answers_are_object CHECK (jsonb_typeof(answers) = 'object')
 );
 

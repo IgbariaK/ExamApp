@@ -9,8 +9,12 @@ const ExamTaker = () => {
   const navigate = useNavigate();
   const exam = mockDB.getExamById(examId);
   const [answers, setAnswers] = useState({}); // Stores answers as { questionId: "user text" }
+  const [error, setError] = useState('');
 
   const user = storageService.getJson('activeUser', null);
+  const alreadySubmitted = user?.role === 'STUDENT'
+    ? mockDB.getSubmissionsByStudent(user.id).some((submission) => submission.examId === examId)
+    : false;
 
   const handleAnswerChange = (questionId, value) => {
     setAnswers({
@@ -21,6 +25,12 @@ const ExamTaker = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError('');
+
+    if (alreadySubmitted) {
+      setError('You have already submitted this exam.');
+      return;
+    }
     
     // Create the submission record
     const submission = {
@@ -32,12 +42,16 @@ const ExamTaker = () => {
       submittedAt: new Date()
     };
 
-    mockDB.submitExam(submission);
-    notifyService.success('Exam submitted successfully!');
-    navigate('/'); // Send back to dashboard
+    try {
+      mockDB.submitExam(submission);
+      notifyService.success('Exam submitted successfully!');
+      navigate('/'); // Send back to dashboard
+    } catch (submitError) {
+      setError(submitError.message || 'Could not submit the exam.');
+    }
   };
 
-  if (!user || user.role !== 'STUDENT' || !exam || exam.status !== 'ACTIVE') {
+  if (!user || user.role !== 'STUDENT' || !exam || exam.status !== 'ACTIVE' || alreadySubmitted) {
     return <Navigate to="/" replace />;
   }
 
@@ -49,6 +63,8 @@ const ExamTaker = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+
         {exam.questions.map((q, index) => (
           <div key={q.id} style={{ padding: '20px', marginBottom: '20px', border: '1px solid #bdc3c7', borderRadius: '8px', backgroundColor: '#fdfdfd' }}>
             <p style={{ fontWeight: 'bold', margin: '0 0 15px 0', fontSize: '1.1rem' }}>

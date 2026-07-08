@@ -38,6 +38,7 @@ The client uses `MockDBService` as a data access layer. In client mode it stores
 - Exam publishing through status changes
 - Student exam list
 - Exam taking and answer submission
+- One submission per student per exam
 - Teacher submission review
 - Manual grading and grade publishing
 - Student grades page

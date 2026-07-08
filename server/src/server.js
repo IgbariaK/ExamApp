@@ -408,6 +408,15 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
     };
 
     if (usePostgres) {
+      const existing = await pool.query(
+        'SELECT id FROM submissions WHERE exam_id = $1 AND student_id = $2',
+        [submission.examId, submission.studentId]
+      );
+
+      if (existing.rowCount > 0) {
+        return response.status(409).json({ message: 'You have already submitted this exam.' });
+      }
+
       const result = await pool.query(
         `INSERT INTO submissions (exam_id, student_id, answers, final_grade, status)
          VALUES ($1, $2, $3::jsonb, $4, $5)
@@ -417,10 +426,22 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
       return response.status(201).json(dbSubmissionToClient(result.rows[0]));
     }
 
+    const duplicateSubmission = db.submissions.some(
+      (item) => item.examId === submission.examId && item.studentId === submission.studentId
+    );
+
+    if (duplicateSubmission) {
+      return response.status(409).json({ message: 'You have already submitted this exam.' });
+    }
+
     const storedSubmission = { ...submission, id: request.body.id || `sub_${Date.now()}` };
     db.submissions.push(storedSubmission);
     response.status(201).json(storedSubmission);
   } catch (error) {
+    if (error.code === '23505') {
+      response.status(409).json({ message: 'You have already submitted this exam.' });
+      return;
+    }
     next(error);
   }
 });

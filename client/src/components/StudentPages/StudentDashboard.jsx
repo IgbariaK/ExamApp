@@ -6,6 +6,11 @@ import { storageService } from '../../services/StorageService';
 const StudentDashboard = () => {
   const [user] = useState(() => storageService.getJson('activeUser', null));
   const [availableExams] = useState(() => mockDB.getAllActiveExams());
+  const [submittedExamIds] = useState(() => {
+    const storedUser = storageService.getJson('activeUser', null);
+    if (!storedUser || storedUser.role !== 'STUDENT') return new Set();
+    return new Set(mockDB.getSubmissionsByStudent(storedUser.id).map((submission) => submission.examId));
+  });
   const navigate = useNavigate();
 
   if (!user || user.role !== 'STUDENT') {
@@ -23,22 +28,32 @@ const StudentDashboard = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {availableExams.map(exam => (
-            <div key={exam.id} style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-              <div>
-                <h3 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{exam.title}</h3>
-                <span style={{ fontSize: '0.9em', color: '#7f8c8d' }}>
-                  Passing Grade: {exam.passingGrade} | Questions: {exam.questions.length}
-                </span>
+          {availableExams.map(exam => {
+            const alreadySubmitted = submittedExamIds.has(exam.id);
+
+            return (
+              <div key={exam.id} style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{exam.title}</h3>
+                  <span style={{ fontSize: '0.9em', color: '#7f8c8d' }}>
+                    Passing Grade: {exam.passingGrade} | Questions: {exam.questions.length}
+                  </span>
+                </div>
+                {alreadySubmitted ? (
+                  <span style={{ padding: '10px 20px', backgroundColor: '#ecf0f1', color: '#7f8c8d', borderRadius: '4px', fontWeight: 'bold' }}>
+                    Submitted
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => navigate(`/take-exam/${exam.id}`)}
+                    style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
+                  >
+                    Take Exam
+                  </button>
+                )}
               </div>
-              <button 
-                onClick={() => navigate(`/take-exam/${exam.id}`)} 
-                style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
-              >
-                Take Exam
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -194,6 +194,14 @@ class MockDBService {
       });
     }
     const data = this.getData();
+    const duplicateSubmission = data.submissions.some(
+      sub => sub.examId === submission.examId && sub.studentId === submission.studentId
+    );
+
+    if (duplicateSubmission) {
+      throw new Error('You have already submitted this exam.');
+    }
+
     const storedSubmission = {
       ...submission,
       id: submission.id || `sub_${Date.now()}`,

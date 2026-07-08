@@ -8,6 +8,7 @@
     "dev": "node --watch src/server.js",
     "db:schema": "node src/db/runSchema.js",
     "db:seed": "node src/db/seedPostgres.js",
+    "db:add-single-submission-constraint": "node src/db/addSingleSubmissionConstraint.js",
     "db:test-exam": "node src/db/testGetExam.js",
     "db:query-jsonb": "node src/db/queryJsonb.js"
   },
