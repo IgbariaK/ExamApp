@@ -4,6 +4,8 @@ ExamApp is a full-stack exam management system for lecturers and students. Lectu
 
 Live app: https://exam-app-sage-one.vercel.app
 
+GitHub repository: https://github.com/IgbariaK/ExamApp
+
 ## Team
 
 - Khaled Igbaria - 211669700
