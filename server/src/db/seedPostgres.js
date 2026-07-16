@@ -27,6 +27,7 @@ const exams = [
     'ACTIVE',
     60,
     60,
+    2,
     [
       {
         id: 'q1',
@@ -61,6 +62,7 @@ const exams = [
     'DRAFT',
     45,
     70,
+    1,
     [
       {
         id: 'q1',
@@ -130,9 +132,9 @@ async function seedPostgres() {
   for (const exam of exams) {
     await pool.query(
       `INSERT INTO exams
-       (id, teacher_id, title, description, status, time_limit, passing_grade, questions)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
-      [...exam.slice(0, 7), JSON.stringify(exam[7])]
+       (id, teacher_id, title, description, status, time_limit, passing_grade, max_attempts, questions)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)`,
+      [...exam.slice(0, 8), JSON.stringify(exam[8])]
     );
   }
 

@@ -12,9 +12,11 @@ const ExamTaker = () => {
   const [error, setError] = useState('');
 
   const user = storageService.getJson('activeUser', null);
-  const alreadySubmitted = user?.role === 'STUDENT'
-    ? mockDB.getSubmissionsByStudent(user.id).some((submission) => submission.examId === examId)
-    : false;
+  const attemptCount = user?.role === 'STUDENT'
+    ? mockDB.getSubmissionsByStudent(user.id).filter((submission) => submission.examId === examId).length
+    : 0;
+  const maxAttempts = Number(exam?.maxAttempts ?? 1);
+  const attemptsExhausted = attemptCount >= maxAttempts;
 
   const handleAnswerChange = (questionId, value) => {
     setAnswers({
@@ -27,8 +29,8 @@ const ExamTaker = () => {
     e.preventDefault();
     setError('');
 
-    if (alreadySubmitted) {
-      setError('You have already submitted this exam.');
+    if (attemptsExhausted) {
+      setError(`You have used all ${maxAttempts} attempt(s) for this exam.`);
       return;
     }
     
@@ -51,7 +53,7 @@ const ExamTaker = () => {
     }
   };
 
-  if (!user || user.role !== 'STUDENT' || !exam || exam.status !== 'ACTIVE' || alreadySubmitted) {
+  if (!user || user.role !== 'STUDENT' || !exam || exam.status !== 'ACTIVE' || attemptsExhausted) {
     return <Navigate to="/" replace />;
   }
 
@@ -60,6 +62,7 @@ const ExamTaker = () => {
       <div style={{ borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '20px' }}>
         <h2 style={{ margin: '0 0 10px 0' }}>{exam.title}</h2>
         <p style={{ margin: 0, color: '#666' }}>{exam.description}</p>
+        <p style={{ margin: '8px 0 0', color: '#666' }}>Attempt {attemptCount + 1} of {maxAttempts}</p>
       </div>
 
       <form onSubmit={handleSubmit}>

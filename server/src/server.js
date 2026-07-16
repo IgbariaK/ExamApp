@@ -16,6 +16,11 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
 const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL;
 let db = useJson ? loadJsonDb() : createInitialData();
 
+const parseMaxAttempts = (value, fallback = 1) => {
+  const attempts = Number(value ?? fallback);
+  return Number.isInteger(attempts) && attempts >= 1 ? attempts : null;
+};
+
 const persistLocalDb = () => {
   if (useJson) {
     saveJsonDb(db);
@@ -91,6 +96,7 @@ const dbExamToClient = (row) => ({
   status: row.status,
   timeLimit: row.time_limit,
   passingGrade: row.passing_grade,
+  maxAttempts: row.max_attempts,
   questions: row.questions,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -299,19 +305,25 @@ app.get('/api/exams/:id', authenticate, async (request, response, next) => {
 
 app.post('/api/exams', authenticate, requireRole('TEACHER'), async (request, response, next) => {
   try {
+    const maxAttempts = parseMaxAttempts(request.body.maxAttempts);
+    if (maxAttempts === null) {
+      return response.status(400).json({ message: 'Allowed attempts must be a whole number of at least 1.' });
+    }
+
     const exam = {
       ...request.body,
       teacherId: request.user.sub,
       title: request.body.title || 'Untitled Exam',
       status: request.body.status || 'DRAFT',
       passingGrade: Number(request.body.passingGrade ?? 60),
+      maxAttempts,
       questions: Array.isArray(request.body.questions) ? request.body.questions : [],
     };
 
     if (usePostgres) {
       const result = await pool.query(
-        `INSERT INTO exams (teacher_id, title, description, status, time_limit, passing_grade, questions)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        `INSERT INTO exams (teacher_id, title, description, status, time_limit, passing_grade, max_attempts, questions)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
          RETURNING *`,
         [
           exam.teacherId,
@@ -320,6 +332,7 @@ app.post('/api/exams', authenticate, requireRole('TEACHER'), async (request, res
           exam.status,
           Number(exam.timeLimit ?? 60),
           exam.passingGrade,
+          exam.maxAttempts,
           JSON.stringify(exam.questions),
         ]
       );
@@ -340,6 +353,12 @@ app.patch('/api/exams/:id', authenticate, requireRole('TEACHER'), async (request
     if (!(await canTeacherAccessExam(request.user.sub, request.params.id))) {
       return response.status(404).json({ message: 'Record not found.' });
     }
+    const maxAttempts = request.body.maxAttempts === undefined
+      ? undefined
+      : parseMaxAttempts(request.body.maxAttempts);
+    if (maxAttempts === null) {
+      return response.status(400).json({ message: 'Allowed attempts must be a whole number of at least 1.' });
+    }
 
     if (usePostgres) {
       const result = await pool.query(
@@ -349,7 +368,8 @@ app.patch('/api/exams/:id', authenticate, requireRole('TEACHER'), async (request
              status = COALESCE($4, status),
              time_limit = COALESCE($5, time_limit),
              passing_grade = COALESCE($6, passing_grade),
-             questions = COALESCE($7::jsonb, questions),
+             max_attempts = COALESCE($7, max_attempts),
+             questions = COALESCE($8::jsonb, questions),
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
@@ -360,6 +380,7 @@ app.patch('/api/exams/:id', authenticate, requireRole('TEACHER'), async (request
           request.body.status,
           request.body.timeLimit,
           request.body.passingGrade,
+          maxAttempts,
           request.body.questions === undefined ? null : JSON.stringify(request.body.questions),
         ]
       );
@@ -367,7 +388,13 @@ app.patch('/api/exams/:id', authenticate, requireRole('TEACHER'), async (request
     }
 
     const index = db.exams.findIndex((item) => String(item.id) === request.params.id);
-    db.exams[index] = { ...db.exams[index], ...request.body, id: db.exams[index].id, teacherId: request.user.sub };
+    db.exams[index] = {
+      ...db.exams[index],
+      ...request.body,
+      ...(maxAttempts === undefined ? {} : { maxAttempts }),
+      id: db.exams[index].id,
+      teacherId: request.user.sub,
+    };
     persistLocalDb();
     response.json(db.exams[index]);
   } catch (error) {
@@ -442,13 +469,19 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
     };
 
     if (usePostgres) {
+      const examResult = await pool.query('SELECT status, max_attempts FROM exams WHERE id = $1', [submission.examId]);
+      const exam = examResult.rows[0];
+      if (!exam || exam.status !== 'ACTIVE') {
+        return response.status(404).json({ message: 'Active exam not found.' });
+      }
+
       const existing = await pool.query(
-        'SELECT id FROM submissions WHERE exam_id = $1 AND student_id = $2',
+        'SELECT COUNT(*)::integer AS count FROM submissions WHERE exam_id = $1 AND student_id = $2',
         [submission.examId, submission.studentId]
       );
 
-      if (existing.rowCount > 0) {
-        return response.status(409).json({ message: 'You have already submitted this exam.' });
+      if (existing.rows[0].count >= exam.max_attempts) {
+        return response.status(409).json({ message: `You have used all ${exam.max_attempts} attempt(s) for this exam.` });
       }
 
       const result = await pool.query(
@@ -467,12 +500,16 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
       return response.status(201).json(storedSubmission);
     }
 
-    const duplicateSubmission = db.submissions.some(
+    const exam = db.exams.find((item) => String(item.id) === String(submission.examId));
+    if (!exam || exam.status !== 'ACTIVE') {
+      return response.status(404).json({ message: 'Active exam not found.' });
+    }
+    const attemptCount = db.submissions.filter(
       (item) => item.examId === submission.examId && item.studentId === submission.studentId
-    );
+    ).length;
 
-    if (duplicateSubmission) {
-      return response.status(409).json({ message: 'You have already submitted this exam.' });
+    if (attemptCount >= Number(exam.maxAttempts ?? 1)) {
+      return response.status(409).json({ message: `You have used all ${exam.maxAttempts ?? 1} attempt(s) for this exam.` });
     }
 
     const storedSubmission = { ...submission, id: request.body.id || `sub_${Date.now()}` };
@@ -486,10 +523,6 @@ app.post('/api/submissions', authenticate, requireRole('STUDENT'), async (reques
     });
     response.status(201).json(storedSubmission);
   } catch (error) {
-    if (error.code === '23505') {
-      response.status(409).json({ message: 'You have already submitted this exam.' });
-      return;
-    }
     next(error);
   }
 });

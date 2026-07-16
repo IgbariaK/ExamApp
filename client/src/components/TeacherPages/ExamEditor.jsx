@@ -15,6 +15,7 @@ const ExamEditor = () => {
   // Form State
   const [title, setTitle] = useState(existingExam?.title || '');
   const [passingGrade, setPassingGrade] = useState(existingExam?.passingGrade || configurationService.get('defaultPassingGrade'));
+  const [maxAttempts, setMaxAttempts] = useState(existingExam?.maxAttempts || 1);
   const [status, setStatus] = useState(existingExam?.status || 'DRAFT');
   const [questions, setQuestions] = useState(existingExam?.questions || []);
 
@@ -49,6 +50,7 @@ const ExamEditor = () => {
       description: existingExam?.description || 'A new exam created by ' + user.name,
       status,
       passingGrade: Number(passingGrade),
+      maxAttempts: Number(maxAttempts),
       questions: questions,
       createdAt: existingExam?.createdAt || new Date().toISOString()
     };
@@ -87,6 +89,16 @@ const ExamEditor = () => {
             required
             style={{ width: '100%', padding: '8px', marginBottom: '15px', boxSizing: 'border-box' }}
             placeholder="e.g., Midterm Exam: Formal Languages"
+          />
+
+          <label style={{ display: 'block', margin: '15px 0 5px', fontWeight: 'bold' }}>Allowed Attempts:</label>
+          <input
+            type="number"
+            value={maxAttempts}
+            onChange={(event) => setMaxAttempts(event.target.value)}
+            min="1"
+            required
+            style={{ width: '100px', padding: '8px' }}
           />
 
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Passing Grade:</label>

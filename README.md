@@ -24,7 +24,7 @@ Live app: https://exam-app-sage-one.vercel.app
 flowchart LR
   User[Teacher / Student] --> Client[React + Vite Client]
   Client -->|HTTP /api + Bearer token| API[Express API]
-  API -->|SQL via pg| DB[(Neon PostgreSQL)]
+  API -->|SQL via pg| DB[(PostgreSQL)]
   API --> Auth[JWT-style token auth]
   Client --> Storage[Local Storage Session]
 ```
@@ -56,6 +56,7 @@ erDiagram
     varchar status
     integer time_limit
     integer passing_grade
+    integer max_attempts
     jsonb questions
     timestamp created_at
     timestamp updated_at
@@ -73,7 +74,7 @@ erDiagram
   }
 ```
 
-Each student can submit only once per exam. This is enforced by the backend and by a unique database constraint on `submissions(exam_id, student_id)`.
+Teachers choose how many attempts each student may make for an exam. The backend enforces the configured limit.
 
 ## Features
 
@@ -85,7 +86,7 @@ Each student can submit only once per exam. This is enforced by the backend and 
 - Exam publishing through status changes
 - Student exam list
 - Exam taking and answer submission
-- One submission per student per exam
+- Configurable attempt limit per exam
 - Teacher submission review
 - Manual grading and grade publishing
 - Student grades page
@@ -262,7 +263,7 @@ Content-Type: application/json
 }
 ```
 
-If the same student submits the same exam again, the API returns `409 Conflict`.
+When a student reaches the exam's attempt limit, the API returns `409 Conflict`.
 
 ## Database
 
@@ -285,6 +286,7 @@ npm run server:postgres
 npm run server:json
 npm run db:schema
 npm run db:seed
+npm run db:migrate-attempts
 npm run db:test-exam
 npm run db:query-jsonb
 npm run db:down
@@ -319,17 +321,17 @@ The recommended deployment setup is:
 ```text
 Vercel static hosting -> React client
 Vercel serverless function -> Express API
-Neon -> PostgreSQL database
+PostgreSQL database
 Docker Compose -> Local PostgreSQL and notification microservice
 ```
 
-### 1. Neon Database
+### 1. PostgreSQL Database
 
-Create a Neon project and copy the pooled connection string. Put it in your local `.env` as:
+Configure your PostgreSQL connection in `.env`:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
-PGSSLMODE=require
+DATABASE_URL=postgres://exam_app:exam_app_password@localhost:5432/exam_app
+PGSSLMODE=disable
 SERVER_DATA_SOURCE=postgres
 ```
 
@@ -346,7 +348,7 @@ This repo includes `vercel.json` and `api/index.js` for deploying the React clie
 In Vercel, import this GitHub repository and set these environment variables:
 
 ```text
-DATABASE_URL=your Neon pooled connection string
+DATABASE_URL=your PostgreSQL connection string
 PGSSLMODE=require
 SERVER_DATA_SOURCE=postgres
 JWT_SECRET=a long random secret
@@ -395,7 +397,7 @@ Implemented:
 - Docker Compose notification microservice
 - Documentation and architecture overview
 - Vercel deployment configuration
-- Neon-compatible hosted PostgreSQL configuration
+- PostgreSQL configuration
 - Full-stack deployment path with hosted frontend, API, and database
 - Architecture and database diagrams
 - API examples, security notes, and demo flow

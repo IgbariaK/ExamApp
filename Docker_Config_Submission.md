@@ -13,7 +13,7 @@ ExamApp - Full Stack Exam Management System
 
 The project includes Docker configuration for running a local PostgreSQL database during development and testing.
 
-Production uses Neon PostgreSQL, but the project can also run locally with PostgreSQL through Docker.
+The project uses PostgreSQL locally through Docker.
 
 The project also includes a custom Docker-based microservice:
 
@@ -188,7 +188,7 @@ This file is ignored by Git and is only for local development.
 
 This project supports:
 
-- Remote database: Neon PostgreSQL
+- Database: PostgreSQL
 - Local database: PostgreSQL through Docker Compose
 - Local JSON storage mode
 - Custom Docker-based notification microservice

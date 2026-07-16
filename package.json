@@ -18,7 +18,7 @@
     "microservice:down": "docker compose stop notification-service",
     "db:schema": "npm --prefix server run db:schema",
     "db:seed": "npm --prefix server run db:seed",
-    "db:add-single-submission-constraint": "npm --prefix server run db:add-single-submission-constraint",
+    "db:migrate-attempts": "npm --prefix server run db:migrate-attempts",
     "db:test-exam": "npm --prefix server run db:test-exam",
     "db:query-jsonb": "npm --prefix server run db:query-jsonb"
   },

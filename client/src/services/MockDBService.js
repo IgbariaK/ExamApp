@@ -194,12 +194,14 @@ class MockDBService {
       });
     }
     const data = this.getData();
-    const duplicateSubmission = data.submissions.some(
+    const exam = data.exams.find(item => item.id === submission.examId);
+    const attemptCount = data.submissions.filter(
       sub => sub.examId === submission.examId && sub.studentId === submission.studentId
-    );
+    ).length;
+    const maxAttempts = Number(exam?.maxAttempts ?? 1);
 
-    if (duplicateSubmission) {
-      throw new Error('You have already submitted this exam.');
+    if (!exam || attemptCount >= maxAttempts) {
+      throw new Error(`You have used all ${maxAttempts} attempt(s) for this exam.`);
     }
 
     const storedSubmission = {

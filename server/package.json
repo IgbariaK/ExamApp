@@ -10,7 +10,7 @@
     "dev:postgres": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:SERVER_DATA_SOURCE='postgres'; node --watch src/server.js\"",
     "db:schema": "node src/db/runSchema.js",
     "db:seed": "node src/db/seedPostgres.js",
-    "db:add-single-submission-constraint": "node src/db/addSingleSubmissionConstraint.js",
+    "db:migrate-attempts": "node src/db/migrateExamAttempts.js",
     "db:test-exam": "node src/db/testGetExam.js",
     "db:query-jsonb": "node src/db/queryJsonb.js"
   },

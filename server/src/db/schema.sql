@@ -21,6 +21,7 @@ CREATE TABLE exams (
   status VARCHAR(20) NOT NULL CHECK (status IN ('DRAFT', 'ACTIVE', 'GRADING', 'COMPLETED', 'ARCHIVED')),
   time_limit INTEGER NOT NULL DEFAULT 60,
   passing_grade INTEGER NOT NULL CHECK (passing_grade BETWEEN 0 AND 100),
+  max_attempts INTEGER NOT NULL DEFAULT 1 CHECK (max_attempts >= 1),
   questions JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -36,7 +37,6 @@ CREATE TABLE submissions (
   status VARCHAR(20) NOT NULL CHECK (status IN ('SUBMITTED', 'GRADED')),
   answers JSONB NOT NULL DEFAULT '{}'::jsonb,
   submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT one_submission_per_student_exam UNIQUE (exam_id, student_id),
   CONSTRAINT answers_are_object CHECK (jsonb_typeof(answers) = 'object')
 );
 
