@@ -73,14 +73,32 @@ const ExamTaker = () => {
             <p style={{ fontWeight: 'bold', margin: '0 0 15px 0', fontSize: '1.1rem' }}>
               {index + 1}. {q.text} <span style={{ fontWeight: 'normal', color: '#7f8c8d', fontSize: '0.9rem' }}>({q.points} pts)</span>
             </p>
-            <textarea
-              required
-              rows="4"
-              value={answers[q.id] || ''}
-              onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-              placeholder="Type your answer here..."
-              style={{ width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
+            {q.type === 'MULTIPLE_CHOICE' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(q.options || []).map((option, optionIndex) => (
+                  <label key={optionIndex} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name={`question-${q.id}`}
+                      value={option}
+                      checked={answers[q.id] === option}
+                      onChange={(event) => handleAnswerChange(q.id, event.target.value)}
+                      required
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <textarea
+                required
+                rows="4"
+                value={answers[q.id] || ''}
+                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                placeholder="Type your answer here..."
+                style={{ width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            )}
           </div>
         ))}
 

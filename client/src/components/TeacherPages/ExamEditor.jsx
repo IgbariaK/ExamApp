@@ -23,9 +23,10 @@ const ExamEditor = () => {
   const handleAddQuestion = () => {
     const newQuestion = {
       id: 'q_' + Date.now(),
-      type: 'OPEN_ENDED', // Defaulting to open-ended for simplicity right now
+      type: 'OPEN_ENDED',
       text: '',
       correctAnswer: '',
+      options: ['', ''],
       points: 10
     };
     setQuestions([...questions, newQuestion]);
@@ -39,9 +40,63 @@ const ExamEditor = () => {
     setQuestions(updatedQuestions);
   };
 
+  const handleQuestionTypeChange = (id, type) => {
+    setQuestions(questions.map((question) => (
+      question.id === id
+        ? { ...question, type, correctAnswer: '', options: question.options?.length >= 2 ? question.options : ['', ''] }
+        : question
+    )));
+  };
+
+  const handleOptionChange = (questionId, optionIndex, value) => {
+    setQuestions(questions.map((question) => {
+      if (question.id !== questionId) return question;
+      const options = [...(question.options || ['', ''])];
+      const previousValue = options[optionIndex];
+      options[optionIndex] = value;
+      return {
+        ...question,
+        options,
+        correctAnswer: question.correctAnswer === previousValue ? value : question.correctAnswer,
+      };
+    }));
+  };
+
+  const addOption = (questionId) => {
+    setQuestions(questions.map((question) => (
+      question.id === questionId ? { ...question, options: [...(question.options || ['', '']), ''] } : question
+    )));
+  };
+
+  const removeOption = (questionId, optionIndex) => {
+    setQuestions(questions.map((question) => {
+      const options = question.options || ['', ''];
+      if (question.id !== questionId || options.length <= 2) return question;
+      const removedOption = question.options[optionIndex];
+      return {
+        ...question,
+        options: question.options.filter((_, index) => index !== optionIndex),
+        correctAnswer: question.correctAnswer === removedOption ? '' : question.correctAnswer,
+      };
+    }));
+  };
+
   // Save the exam to the database
   const handleSaveExam = (e) => {
     e.preventDefault();
+
+    const invalidChoiceQuestion = questions.find((question) => {
+      if (question.type !== 'MULTIPLE_CHOICE') return false;
+      const options = (question.options || []).map((option) => option.trim());
+      return options.length < 2
+        || new Set(options).size !== options.length
+        || options.some((option) => !option)
+        || !options.includes(question.correctAnswer);
+    });
+    if (invalidChoiceQuestion) {
+      notifyService.error('Each multiple-choice question needs at least two unique options and one correct answer.');
+      return;
+    }
     
     const newExam = {
       id: existingExam?.id || 'exam_' + Date.now(),
@@ -141,16 +196,66 @@ const ExamEditor = () => {
                 required
                 style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }}
               />
+
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Question Type:</label>
+              <select
+                value={q.type || 'OPEN_ENDED'}
+                onChange={(event) => handleQuestionTypeChange(q.id, event.target.value)}
+                style={{ padding: '8px', marginBottom: '12px' }}
+              >
+                <option value="OPEN_ENDED">Open-ended</option>
+                <option value="MULTIPLE_CHOICE">Multiple choice</option>
+              </select>
+
+              {q.type === 'MULTIPLE_CHOICE' && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Answer Options:</label>
+                  {(q.options || ['', '']).map((option, optionIndex) => (
+                    <div key={optionIndex} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                      <input
+                        type="radio"
+                        name={`correct-${q.id}`}
+                        checked={q.correctAnswer === option && option !== ''}
+                        onChange={() => handleQuestionChange(q.id, 'correctAnswer', option)}
+                        required
+                        aria-label={`Mark option ${optionIndex + 1} as correct`}
+                      />
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(event) => handleOptionChange(q.id, optionIndex, event.target.value)}
+                        placeholder={`Option ${optionIndex + 1}`}
+                        required
+                        style={{ flex: 1, padding: '8px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeOption(q.id, optionIndex)}
+                        disabled={(q.options || []).length <= 2}
+                        style={{ padding: '8px' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => addOption(q.id)} style={{ padding: '7px 12px' }}>
+                    + Add Option
+                  </button>
+                  <small style={{ display: 'block', marginTop: '6px', color: '#666' }}>Select the radio button beside the correct answer.</small>
+                </div>
+              )}
               
               <div style={{ display: 'flex', gap: '15px' }}>
                 <div style={{ flex: 1 }}>
-                  <input 
-                    type="text" 
-                    placeholder="Expected Answer (for auto-grading)" 
-                    value={q.correctAnswer}
-                    onChange={(e) => handleQuestionChange(q.id, 'correctAnswer', e.target.value)}
-                    style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                  />
+                  {q.type !== 'MULTIPLE_CHOICE' && (
+                    <input
+                      type="text"
+                      placeholder="Expected Answer"
+                      value={q.correctAnswer}
+                      onChange={(e) => handleQuestionChange(q.id, 'correctAnswer', e.target.value)}
+                      style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                    />
+                  )}
                 </div>
                 <div>
                   <input 

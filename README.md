@@ -82,7 +82,7 @@ Teachers choose how many attempts each student may make for an exam. The backend
 - Role-based navigation
 - Teacher exam dashboard
 - Exam creation and editing
-- Question management with question type metadata
+- Open-ended and multiple-choice question creation
 - Exam publishing through status changes
 - Student exam list
 - Exam taking and answer submission
