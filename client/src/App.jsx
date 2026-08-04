@@ -19,7 +19,7 @@ const App = () => {
   }
 
   const [user, setUser] = useState(() => {
-    const storedUser = storageService.getJson('activeUser', null);
+    const storedUser = storageService.getActiveUser();
 
     if (configurationService.get('dataSource') === 'server' && storedUser && !storedUser.token) {
       storageService.removeItem('activeUser');

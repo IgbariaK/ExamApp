@@ -46,16 +46,25 @@ class MockDBService {
     const request = new XMLHttpRequest();
     request.open(method, `${configurationService.get('apiBaseUrl')}${path}`, false);
     request.setRequestHeader('Content-Type', 'application/json');
-    const activeUser = storageService.getJson('activeUser', null);
+    const activeUser = storageService.getActiveUser();
     if (activeUser?.token) {
       request.setRequestHeader('Authorization', `Bearer ${activeUser.token}`);
     }
     request.send(body === undefined ? null : JSON.stringify(body));
 
     if (request.status < 200 || request.status >= 300) {
-      const message = request.responseText
-        ? JSON.parse(request.responseText).message
-        : `Server request failed with status ${request.status}.`;
+      let message = `Server request failed with status ${request.status}.`;
+      try {
+        message = JSON.parse(request.responseText).message || message;
+      } catch {
+        // Keep the status-based message when the server did not return JSON.
+      }
+
+      if (request.status === 401) {
+        storageService.removeItem('activeUser');
+        window.location.replace('/');
+      }
+
       throw new Error(message);
     }
 

@@ -30,6 +30,31 @@ class StorageService {
     }
   }
 
+  getActiveUser() {
+    const user = this.getJson('activeUser', null);
+    if (!user) return null;
+
+    if (user.token && this.isTokenExpired(user.token)) {
+      this.removeItem('activeUser');
+      return null;
+    }
+
+    return user;
+  }
+
+  isTokenExpired(token) {
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return true;
+
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
+      return !payload.exp || payload.exp <= Math.floor(Date.now() / 1000);
+    } catch {
+      return true;
+    }
+  }
+
   setJson(key, value) {
     this.setItem(key, JSON.stringify(value));
   }
