@@ -8,7 +8,14 @@ export const app = express();
 const port = Number(process.env.PORT) || 3001;
 const serverDataSource = process.env.SERVER_DATA_SOURCE || 'auto';
 const useJson = serverDataSource === 'json';
-const usePostgres = serverDataSource !== 'memory' && !useJson && Boolean(process.env.DATABASE_URL);
+const isVercelDeployment = Boolean(process.env.VERCEL);
+const postgresRequired = serverDataSource === 'postgres' || isVercelDeployment;
+const usePostgres = !useJson
+  && serverDataSource !== 'memory'
+  && Boolean(process.env.DATABASE_URL);
+const dataSourceConfigurationError = postgresRequired && !process.env.DATABASE_URL
+  ? 'DATABASE_URL is required for the deployed app. Configure a shared PostgreSQL database and redeploy.'
+  : null;
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
@@ -65,6 +72,12 @@ app.use((request, response, next) => {
 });
 
 app.use(express.json());
+app.use('/api', (_request, response, next) => {
+  if (dataSourceConfigurationError) {
+    return response.status(503).json({ message: dataSourceConfigurationError });
+  }
+  next();
+});
 app.use((request, response, next) => {
   const startedAt = Date.now();
   response.on('finish', () => {
