@@ -4,9 +4,9 @@ import { mockDB } from '../../services/MockDBService';
 import { storageService } from '../../services/StorageService';
 
 const StudentGrades = () => {
-  const [user] = useState(() => storageService.getJson('activeUser', null));
+  const [user] = useState(() => storageService.getActiveUser());
   const [submissions] = useState(() => {
-    const storedUser = storageService.getJson('activeUser', null);
+    const storedUser = storageService.getActiveUser();
     return storedUser?.role === 'STUDENT' ? mockDB.getSubmissionsByStudent(storedUser.id) : [];
   });
 
@@ -25,20 +25,17 @@ const StudentGrades = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {submissions.map((submission) => {
-            const exam = mockDB.getExamById(submission.examId);
-            return (
+          {submissions.map((submission) => (
               <div key={submission.id} style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <div style={{ textAlign: 'left' }}>
-                  <h3 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{exam?.title || 'Deleted exam'}</h3>
+                  <h3 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{submission.examTitle || 'Deleted exam'}</h3>
                   <span style={{ fontSize: '0.9em', color: '#7f8c8d' }}>Status: {submission.status}</span>
                 </div>
                 <strong style={{ color: submission.status === 'GRADED' ? '#27ae60' : '#c0392b' }}>
                   {submission.finalGrade !== null ? `${submission.finalGrade}/100` : 'Pending'}
                 </strong>
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>

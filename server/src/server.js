@@ -118,6 +118,7 @@ const dbExamToClient = (row) => ({
 const dbSubmissionToClient = (row) => ({
   id: row.id,
   examId: row.exam_id,
+  examTitle: row.exam_title,
   studentId: row.student_id,
   score: row.score,
   finalGrade: row.final_grade,
@@ -458,14 +459,24 @@ app.get('/api/submissions', authenticate, async (request, response, next) => {
         conditions.push(`student_id = $${values.length}`);
       }
       const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-      const result = await pool.query(`SELECT * FROM submissions ${where} ORDER BY submitted_at DESC`, values);
+      const result = await pool.query(
+        `SELECT submissions.*, exams.title AS exam_title
+         FROM submissions
+         LEFT JOIN exams ON exams.id = submissions.exam_id
+         ${where}
+         ORDER BY submissions.submitted_at DESC`,
+        values
+      );
       return response.json(result.rows.map(dbSubmissionToClient));
     }
 
     let submissions = db.submissions;
     if (examId) submissions = submissions.filter((submission) => submission.examId === examId);
     if (studentId) submissions = submissions.filter((submission) => submission.studentId === studentId);
-    response.json(submissions);
+    response.json(submissions.map((submission) => ({
+      ...submission,
+      examTitle: db.exams.find((exam) => exam.id === submission.examId)?.title,
+    })));
   } catch (error) {
     next(error);
   }

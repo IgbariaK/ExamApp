@@ -236,7 +236,12 @@ class MockDBService {
       return this.query('submissions', { studentId });
     }
     const data = this.getData();
-    return data.submissions.filter(sub => sub.studentId === studentId);
+    return data.submissions
+      .filter(sub => sub.studentId === studentId)
+      .map(sub => ({
+        ...sub,
+        examTitle: data.exams.find(exam => exam.id === sub.examId)?.title,
+      }));
   }
 
   updateSubmissionGrade(submissionId, newGrade) {
