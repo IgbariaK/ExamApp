@@ -11,9 +11,19 @@ import StudentDashboard from './components/StudentPages/StudentDashboard';
 import ExamTaker from './components/StudentPages/ExamTaker';
 import StudentGrades from './components/StudentPages/StudentGrades';
 import { storageService } from './services/StorageService';
+import { configurationService } from './services/ConfigurationService';
 
 const App = () => {
-  const [user, setUser] = useState(() => storageService.getJson('activeUser', null));
+  const [user, setUser] = useState(() => {
+    const storedUser = storageService.getJson('activeUser', null);
+
+    if (configurationService.get('dataSource') === 'server' && storedUser && !storedUser.token) {
+      storageService.removeItem('activeUser');
+      return null;
+    }
+
+    return storedUser;
+  });
 
   const handleLoginSuccess = (loggedInUser) => {
     setUser(loggedInUser);
