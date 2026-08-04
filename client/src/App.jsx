@@ -14,6 +14,10 @@ import { storageService } from './services/StorageService';
 import { configurationService } from './services/ConfigurationService';
 
 const App = () => {
+  if (configurationService.get('dataSource') === 'server') {
+    storageService.resetForVersion('server-v1');
+  }
+
   const [user, setUser] = useState(() => {
     const storedUser = storageService.getJson('activeUser', null);
 

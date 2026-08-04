@@ -11,6 +11,14 @@ class StorageService {
     localStorage.removeItem(key);
   }
 
+  resetForVersion(version) {
+    const versionKey = 'examApp_storageVersion';
+    if (this.getItem(versionKey) === version) return;
+
+    localStorage.clear();
+    this.setItem(versionKey, version);
+  }
+
   getJson(key, fallback = null) {
     const value = this.getItem(key);
     if (!value) return fallback;
